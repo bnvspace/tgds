@@ -93,7 +93,7 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
           cancelAnimationFrame(rafRef.current)
         }
       }
-    }, [initialSymbol, symbolPool])
+    }, [initialSymbol?.id, symbolPool.length])
 
     function renderStrip(symbols: GameSymbol[]) {
       if (!stripRef.current) return
