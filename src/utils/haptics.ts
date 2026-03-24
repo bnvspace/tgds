@@ -39,7 +39,7 @@ export const haptics = {
 
   // ── Reel spin ─────────────────────────────────────────────
   /** Reel animation tick */
-  reelTick() { hf()?.impactOccurred('soft') },
+  reelTick() { hf()?.selectionChanged() },
   /** All reels stopped */
   reelLand() { hf()?.impactOccurred('medium') },
 

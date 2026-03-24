@@ -27,6 +27,7 @@ export default function WorldMapScreen() {
   const setPhase = useGameStore((s) => s.setPhase)
   const setEnemy = useGameStore((s) => s.setEnemy)
   const player = useGameStore((s) => s.player)
+  const worldTier = useGameStore((s) => s.worldTier)
   const store = useGameStore()
   const { t } = useTranslation()
 
@@ -71,7 +72,7 @@ export default function WorldMapScreen() {
 
     // combat / elite / boss → set proper enemy and go to combat
     import('@/game/enemies').then(({ getRandomEnemy }) => {
-      const enemy = getRandomEnemy(node.zone, node.type === 'boss')
+      const enemy = getRandomEnemy(node.zone, node.type === 'boss', worldTier)
       setEnemy(enemy)
       setPhase('combat_start')
     })

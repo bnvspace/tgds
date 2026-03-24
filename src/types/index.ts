@@ -223,6 +223,7 @@ export interface MapNode {
 export interface GameState {
   phase: GamePhase
   currentZone: ZoneType
+  worldTier: number
   player: Player | null
   currentEnemy: Enemy | null
   mapNodes: MapNode[]

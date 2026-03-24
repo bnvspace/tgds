@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { SafeAreaInset, Telegram, WebApp as TelegramWebApp } from '@twa-dev/types'
 import styles from './Layout.module.css'
 
@@ -7,13 +7,14 @@ interface LayoutProps {
 }
 
 const EMPTY_INSETS: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 }
-const TELEGRAM_TOP_OVERLAY_FALLBACK = 56
+const TELEGRAM_TOP_OVERLAY_FALLBACK = 72
+const TELEGRAM_TOP_EXTRA_OFFSET = 12
 const SAFE_AREA_RETRY_DELAYS_MS = [350, 500, 1000] as const
 
 function readLayoutInsets(tg: TelegramWebApp): SafeAreaInset {
   const safe = tg.safeAreaInset ?? EMPTY_INSETS
   const content = tg.contentSafeAreaInset ?? EMPTY_INSETS
-  const top = Math.max(content.top, safe.top, TELEGRAM_TOP_OVERLAY_FALLBACK)
+  const top = Math.max(content.top, safe.top, TELEGRAM_TOP_OVERLAY_FALLBACK) + TELEGRAM_TOP_EXTRA_OFFSET
 
   return {
     top,
@@ -91,15 +92,21 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, [])
 
+  const rootStyle: CSSProperties & Record<string, string | number> = {
+    '--layout-safe-top': `${insets.top}px`,
+    '--layout-safe-bottom': `${insets.bottom}px`,
+    '--layout-safe-left': `${insets.left}px`,
+    '--layout-safe-right': `${insets.right}px`,
+    paddingTop: insets.top,
+    paddingBottom: insets.bottom,
+    paddingLeft: insets.left,
+    paddingRight: insets.right,
+  }
+
   return (
     <div
       className={styles.root}
-      style={{
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-      }}
+      style={rootStyle}
     >
       <div className={styles.frame}>
         <div className={styles.content}>{children}</div>

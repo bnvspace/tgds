@@ -123,12 +123,13 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
               const targetY = finalY(resultIndex)
               const startY = finalY(startIndex)   // start showing from bottom
               const totalDist = targetY - startY // Positive distance (goes UP mathematically, DOWN visually)
-              const duration = 1800              // ms for this reel
+              const duration = 1250              // ms for this reel
 
               stripRef.current.style.transform = `translateY(${startY}px)`
               currentYRef.current = startY
 
               let startTime: number | null = null
+              let lastSymbolIndex = 0 // track reel ticks for haptic
 
               function tick(now: number) {
                 if (!startTime) startTime = now
@@ -143,11 +144,19 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
                 }
                 currentYRef.current = y
 
+                // Haptic reel tick: vibrate each time a symbol passes
+                const distTraveled = Math.abs(y - startY)
+                const symIndex = Math.floor(distTraveled / SYM_H)
+                if (symIndex > lastSymbolIndex) {
+                  lastSymbolIndex = symIndex
+                  haptics.reelTick()
+                }
+
                 if (t < 1) {
                   requestAnimationFrame(tick)
                 } else {
                   // Overshoot → snap back
-                  try { haptics.impactMedium() } catch (e) { /* ignore */ }
+                  haptics.reelLand()
                   const overshootY = targetY + OVERSHOOT_PX
                   if (stripRef.current) {
                     stripRef.current.style.transition = `transform 80ms ease-in`

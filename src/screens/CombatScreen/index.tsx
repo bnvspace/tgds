@@ -8,6 +8,8 @@ import QTEBar from '@/components/QTEBar'
 import { spin } from '@/game/slotGenerator'
 import { resolveSymbols } from '@/game/resolution'
 import { makeQTEResult, checkMegaCrit } from '@/game/slotGenerator'
+import { playHitSFX, playHealSFX, playShieldSFX, playCoinSFX, playErrorSFX, playButtonSFX } from '@/utils/audio'
+import { haptics } from '@/utils/haptics'
 import { useTranslation } from '@/i18n'
 import type { GameSymbol, QTETier } from '@/types'
 import styles from './CombatScreen.module.css'
@@ -41,7 +43,9 @@ export default function CombatScreen() {
   const applyDamageToEnemy = useGameStore((s) => s.applyDamageToEnemy)
   const damagePlayer = useGameStore((s) => s.damagePlayer)
   const advanceEnemyPattern = useGameStore((s) => s.advanceEnemyPattern)
+  const recordCombatVictory = useGameStore((s) => s.recordCombatVictory)
   const setPhase = useGameStore((s) => s.setPhase)
+  const endRun = useGameStore((s) => s.endRun)
   const { t } = useTranslation()
 
   const slotRef = useRef<SlotMachineHandle>(null)
@@ -49,6 +53,7 @@ export default function CombatScreen() {
 
   const [combatPhase, setCombatPhase] = useState<CombatPhase>('player_idle')
   const [combatLog, setCombatLog] = useState<string[]>([t('combat_start')])
+  const [showFleeConfirm, setShowFleeConfirm] = useState(false)
 
   useEffect(() => {
     if (!currentEnemy) setEnemy(DEV_ENEMY)
@@ -96,6 +101,12 @@ export default function CombatScreen() {
     applySpinResult(result)
     applyDamageToEnemy(result.totalDamage)
 
+    // Trigger SFX + haptics (staggered slightly)
+    if (result.totalDamage > 0) { playHitSFX(); haptics.damageDealt() }
+    if (result.totalArmor > 0) setTimeout(() => { playShieldSFX(); haptics.shieldBlock() }, 150)
+    if (result.totalTokens > 0) setTimeout(() => { playCoinSFX(); haptics.coinPickup() }, 300)
+    if (result.totalHeal > 0) setTimeout(() => { playHealSFX(); haptics.heal() }, 450)
+
     const line = [
       qte.tier !== 'miss' ? `✨ ${qte.tier.toUpperCase()} ×${qte.multiplier}` : t('miss'),
       result.synergiesActivated.length
@@ -109,7 +120,9 @@ export default function CombatScreen() {
 
     // Check enemy death
     if (enemy.hp - result.totalDamage <= 0) {
+      recordCombatVictory(enemy)
       log(t('enemy_defeated'))
+      haptics.victory()
       setCombatPhase('done')
       setTimeout(() => setPhase('shop'), 1200)
       return
@@ -121,13 +134,20 @@ export default function CombatScreen() {
 
     const pattern = enemy.attackPattern[enemy.patternIndex]
     const attackType = pattern.type === 'debuff' ? 'physical' : pattern.type
+    const currentArmor = player.armor
+    const effectiveDamage = attackType === 'magical'
+      ? pattern.damage
+      : Math.max(0, pattern.damage - currentArmor)
     damagePlayer(pattern.damage, attackType)
+    playErrorSFX()
+    haptics.damageTaken()  // heavy — player takes hit
     log(`👺 "${pattern.description}" — ${pattern.damage} ${pattern.type}`)
     advanceEnemyPattern()
 
     // Check player death
-    if (player.hp - pattern.damage <= 0) {
+    if (player.hp - effectiveDamage <= 0) {
       log(t('you_died'))
+      haptics.defeat()  // error notification on death
       setCombatPhase('done')
       setTimeout(() => setPhase('game_over'), 1200)
       return
@@ -137,26 +157,67 @@ export default function CombatScreen() {
     setCombatPhase('player_idle')
   }
 
+  function handleFlee() {
+    playButtonSFX()
+    haptics.rigid()  // rigid — swipe-like action
+    setShowFleeConfirm(true)
+  }
+
+  function confirmFlee() {
+    endRun(false)
+  }
+
+  function cancelFlee() {
+    playButtonSFX()
+    setShowFleeConfirm(false)
+  }
+
   return (
     <div className={styles.screen}>
       <EnemyDisplay enemy={enemy} />
+
+      {/* Flee Confirm Overlay */}
+      {showFleeConfirm && (
+        <div className={styles.fleeOverlay}>
+          <div className={styles.fleeDialog}>
+            <p className={styles.fleeQuestion}>🏃 {t('flee')}?</p>
+            <p className={styles.fleeWarning}>{t('flee_warning')}</p>
+            <div className={styles.fleeActions}>
+              <button className={styles.fleeConfirmBtn} onClick={confirmFlee}>
+                ✓ {t('flee')}
+              </button>
+              <button className={styles.fleeCancelBtn} onClick={cancelFlee}>
+                ✕ {t('cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Player HP bar */}
       <div className={styles.playerBar}>
         <div className={styles.playerBarTop}>
           <span className={styles.playerLabel}>{t('hp_label')}</span>
-          <span className={styles.hpValues}>{player?.hp ?? 0}/{player?.maxHp ?? 100}</span>
-          <span className={styles.armor}>🛡 {player?.armor ?? 0}</span>
-          <span className={styles.tokens}>🪙 {player?.tokens ?? 0}</span>
+          <span className={styles.playerHpValues}>{player?.hp ?? 0}/{player?.maxHp ?? 100}</span>
+          <span className={styles.armorLabel}>🛡 {player?.armor ?? 0}</span>
+          <span className={styles.tokensLabel}>🪙 {player?.tokens ?? 0}</span>
         </div>
-        <div className={styles.hpBarTrack}>
+        <div className={styles.hpBar}>
           <motion.div
-            className={styles.hpBarFill}
+            className={styles.hpFill}
             animate={{ width: `${hpPercent}%` }}
             transition={{ duration: 0.4 }}
           />
         </div>
       </div>
+
+      <button
+        className={styles.fleeBtn}
+        onClick={handleFlee}
+        disabled={combatPhase !== 'player_idle' && combatPhase !== 'done'}
+      >
+        🏃 {t('flee')}
+      </button>
 
       {/* QTE bar */}
       <AnimatePresence>

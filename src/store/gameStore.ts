@@ -30,6 +30,7 @@ const DEFAULT_PLAYER: Player = {
 const INITIAL: GameState = {
   phase: 'meta_menu',
   currentZone: 'swamp',
+  worldTier: 0,
   player: null,
   currentEnemy: null,
   mapNodes: [],
@@ -56,6 +57,7 @@ interface GameStore extends GameState {
   setEnemy: (enemy: Enemy) => void
   applyDamageToEnemy: (damage: number) => void
   advanceEnemyPattern: () => void
+  recordCombatVictory: (enemy: Enemy) => void
 
   // ── Player mutations ───────────────────────────────────
   damagePlayer: (amount: number, type: 'physical' | 'magical') => void
@@ -120,6 +122,8 @@ export const useGameStore = create<GameStore>()(
         tokens: 30, // Starting balance for the initial shop
       },
       phase: 'initial_shop',
+      currentZone: 'swamp',
+      worldTier: 0,
       currentEnemy: null,
       lastSpinResult: null,
       mapNodes: map,
@@ -185,6 +189,28 @@ export const useGameStore = create<GameStore>()(
           ...e,
           patternIndex: (e.patternIndex + 1) % e.attackPattern.length,
         },
+      }
+    }),
+
+  recordCombatVictory: (enemy) =>
+    set((s) => {
+      if (!s.player) return s
+
+      const nextWorldTier = enemy.isBoss ? s.worldTier + 1 : s.worldTier
+      const nextMap = enemy.isBoss
+        ? generateWorldMap(Date.now() + nextWorldTier * 9973)
+        : s.mapNodes
+
+      return {
+        player: {
+          ...s.player,
+          fightsWon: s.player.fightsWon + 1,
+        },
+        currentEnemy: null,
+        currentZone: enemy.isBoss ? 'swamp' : s.currentZone,
+        worldTier: nextWorldTier,
+        mapNodes: nextMap,
+        currentNodeId: enemy.isBoss ? null : s.currentNodeId,
       }
     }),
 
@@ -281,11 +307,16 @@ export const useGameStore = create<GameStore>()(
     })),
 
   generateMap: () =>
-    set({ mapNodes: generateWorldMap(Date.now()), currentNodeId: null }),
+    set((s) => ({
+      mapNodes: generateWorldMap(Date.now() + s.worldTier * 9973),
+      currentNodeId: null,
+      currentZone: 'swamp',
+    })),
 
   setCurrentNode: (nodeId) =>
     set((s) => ({
       currentNodeId: nodeId,
+      currentZone: s.mapNodes.find((n) => n.id === nodeId)?.zone ?? s.currentZone,
       mapNodes: s.mapNodes.map((n) =>
         n.id === nodeId ? { ...n, visited: true } : n
       ),
