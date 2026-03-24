@@ -7,17 +7,26 @@ const SYM_H = 80
 const VISIBLE = 3
 const WIN_H = SYM_H * VISIBLE
 
-const LOOP_REPEATS = 12
+const LOOP_REPEATS = 14
 const START_REPEAT_INDEX = 3
 const MAX_REPEAT_INDEX = LOOP_REPEATS - 3
-const SPIN_SPEED_PX_PER_MS = 1.55
-const STOP_LEAD_CELLS = 5
-const STOP_FILLER_CELLS = 4
-const STOP_DURATION_MS = 180
-const OVERSHOOT_PX = 2
+const SPIN_SPEED_PX_PER_MS = 1.12
+const STOP_LEAD_CELLS = 8
+const STOP_FILLER_CELLS = 8
+const STOP_DURATION_MS = 430
+const OVERSHOOT_PX = 3
 
 function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3)
+}
+
+function brakeEase(t: number) {
+  if (t < 0.35) {
+    return (t / 0.35) * 0.55
+  }
+
+  const brakePhase = (t - 0.35) / 0.65
+  return 0.55 + easeOutCubic(brakePhase) * 0.45
 }
 
 function finalTranslate(targetIndex: number): number {
@@ -214,7 +223,7 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
 
           const elapsed = now - startTime
           const progress = Math.min(elapsed / STOP_DURATION_MS, 1)
-          const eased = easeOutCubic(progress)
+          const eased = brakeEase(progress)
           const y = startY + (targetY - startY) * eased
 
           applyTranslate(y)
@@ -233,13 +242,13 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
 
           haptics.reelLand()
           if (stripRef.current) {
-            stripRef.current.style.transition = 'transform 45ms ease-in'
+            stripRef.current.style.transition = 'transform 65ms ease-in'
             stripRef.current.style.transform = `translateY(${targetY - OVERSHOOT_PX}px)`
           }
 
           setTimeout(() => {
             if (stripRef.current) {
-              stripRef.current.style.transition = 'transform 70ms ease-out'
+              stripRef.current.style.transition = 'transform 120ms ease-out'
               stripRef.current.style.transform = `translateY(${targetY}px)`
             }
 
@@ -248,8 +257,8 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
                 stripRef.current.style.transition = ''
               }
               resolve()
-            }, 80)
-          }, 45)
+            }, 120)
+          }, 65)
         }
 
         requestAnimationFrame(tick)

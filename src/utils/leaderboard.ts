@@ -14,7 +14,7 @@ const API_BASE = typeof window !== 'undefined'
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
-    const r = await fetch(`${API_BASE}/api/leaderboard`)
+    const r = await fetch(`${API_BASE}/api/leaderboard`, { cache: 'no-store' })
     if (!r.ok) return []
     return r.json()
   } catch {
@@ -34,6 +34,7 @@ export async function registerUser(tgUser: {
 
     await fetch(`${API_BASE}/api/leaderboard`, {
       method: 'POST',
+      cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: String(tgUser.id),
