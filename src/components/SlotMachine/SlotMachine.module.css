@@ -13,9 +13,10 @@
 
 .reelsRow {
   display: flex;
-  gap: 6px;
+  gap: var(--reel-gap, 6px);
   justify-content: center;
   align-items: center;
+  width: 100%;
 }
 
 /* SPIN button */

@@ -67,7 +67,7 @@ export default function StartScreen() {
           {'>'} {t('start_run')}
         </button>
         <button className={styles.btnSecondary} onClick={handleOpenModifiers}>
-          Modifiers
+          {t('modifiers_title')}
         </button>
         <button className={styles.btnSecondary} onClick={handleOpenLeaderboard}>
           {t('leaderboard')}

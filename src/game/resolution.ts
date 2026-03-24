@@ -1,77 +1,66 @@
-import type { GameSymbol, Player, Enemy, SpinResult, QTEResult, Synergy } from '@/types'
+import type { Enemy, GameSymbol, Player, QTEResult, SpinResult, Synergy } from '@/types'
 import { detectSynergies } from './synergies'
 
-/**
- * 7-step Symbol Resolution Pipeline (order is CRITICAL)
- *
- * 1. Collect symbols
- * 2. Apply base values
- * 3. Apply intra-spin synergies
- * 4. Apply relic modifiers
- * 5. Apply QTE multiplier (ONLY to damage)
- * 6. Apply enemy resistances
- * 7. Apply effects
- */
 export function resolveSymbols(
   symbols: GameSymbol[],
   qte: QTEResult,
   player: Player,
-  _enemy: Enemy
+  _enemy: Enemy,
 ): SpinResult {
-  // ── STEP 1: Collect ──────────────────────────────────
+  const physicalStrengthRanks = player.metaModifiers
+    .filter((modifier) => modifier.id === 'physical_strength')
+    .length
+  const tokenCollectorRanks = player.metaModifiers
+    .filter((modifier) => modifier.id === 'token_collector')
+    .length
+
   const rolledSymbols = symbols
 
-  // ── STEP 2: Base values ───────────────────────────────
   let baseDamage = 0
   let baseMagicDamage = 0
   let baseArmor = 0
   let baseTokens = 0
   let baseHeal = 0
 
-  for (const sym of rolledSymbols) {
-    const e = sym.effect
-    baseDamage += (e.damage ?? 0) * sym.level
-    baseMagicDamage += (e.magicDamage ?? 0) * sym.level
-    baseArmor += (e.armor ?? 0) * sym.level
-    baseTokens += (e.tokens ?? 0) * sym.level
-    baseHeal += (e.heal ?? 0) * sym.level
+  for (const symbol of rolledSymbols) {
+    const effect = symbol.effect
+    baseDamage += (effect.damage ?? 0) * symbol.level
+    baseMagicDamage += (effect.magicDamage ?? 0) * symbol.level
+    baseArmor += (effect.armor ?? 0) * symbol.level
+    baseTokens += (effect.tokens ?? 0) * symbol.level
+    baseHeal += (effect.heal ?? 0) * symbol.level
   }
 
-  // ── STEP 3: Synergies (S_syn) ─────────────────────────
   const synergiesActivated: Synergy[] = detectSynergies(rolledSymbols)
 
   let synergyDamageMult = 1
   let synergyBonusTokens = 0
   let synergyBonusArmor = 0
 
-  for (const syn of synergiesActivated) {
-    if (syn.damageMultiplier) synergyDamageMult *= syn.damageMultiplier
-    if (syn.bonusTokens) synergyBonusTokens += syn.bonusTokens
-    if (syn.bonusArmor) synergyBonusArmor += syn.bonusArmor
+  for (const synergy of synergiesActivated) {
+    if (synergy.damageMultiplier) synergyDamageMult *= synergy.damageMultiplier
+    if (synergy.bonusTokens) synergyBonusTokens += synergy.bonusTokens
+    if (synergy.bonusArmor) synergyBonusArmor += synergy.bonusArmor
   }
 
-  let damage = baseDamage * synergyDamageMult
-  const tokens = baseTokens + synergyBonusTokens
+  const physicalStrengthMult = 1 + physicalStrengthRanks * 0.2
+  const tokenCollectorBonus = rolledSymbols
+    .filter((symbol) => symbol.tags.includes('coin'))
+    .reduce((sum) => sum + tokenCollectorRanks * 2, 0)
+
+  const damage = baseDamage * physicalStrengthMult * synergyDamageMult
+  const tokens = baseTokens + synergyBonusTokens + tokenCollectorBonus
   const armor = baseArmor + synergyBonusArmor
 
-  // ── STEP 4: Relic modifiers (R_mod) ──────────────────
   for (const relic of player.relics) {
     if (relic.effect.damageReduction) {
-      // relic can boost damage or other things — extend here
+      // Reserved for relic scaling.
     }
   }
 
-  // ── STEP 5: QTE multiplier (ONLY to damage) ───────────
   const totalDamage = damage * qte.multiplier
   const totalMagicDamage = baseMagicDamage * qte.multiplier
 
-  // ── STEP 6: Enemy resistances ─────────────────────────
-  // Physical: reduced by enemy armor (enemies can have armor in future)
-  // Magical: bypasses armor
-  const effectivePhysical = Math.max(0, totalDamage) // enemy armor placeholder
-  const effectiveMagical = totalMagicDamage
-
-  // ── STEP 7: Final totals ──────────────────────────────
   return {
     rolledSymbols,
     qte,
@@ -80,7 +69,7 @@ export function resolveSymbols(
     baseTokens,
     baseHeal,
     synergiesActivated,
-    totalDamage: effectivePhysical + effectiveMagical,
+    totalDamage: Math.max(0, totalDamage) + totalMagicDamage,
     totalArmor: armor,
     totalTokens: tokens,
     totalHeal: baseHeal,

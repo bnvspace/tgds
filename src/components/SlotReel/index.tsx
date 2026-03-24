@@ -10,10 +10,10 @@ const WIN_H = SYM_H * VISIBLE
 const LOOP_REPEATS = 14
 const START_REPEAT_INDEX = 3
 const MAX_REPEAT_INDEX = LOOP_REPEATS - 3
-const SPIN_SPEED_PX_PER_MS = 1.12
-const STOP_LEAD_CELLS = 8
-const STOP_FILLER_CELLS = 8
-const STOP_DURATION_MS = 430
+const SPIN_SPEED_PX_PER_MS = 0.96
+const STOP_LEAD_CELLS = 9
+const STOP_FILLER_CELLS = 9
+const STOP_DURATION_MS = 520
 const OVERSHOOT_PX = 3
 
 function easeOutCubic(t: number) {

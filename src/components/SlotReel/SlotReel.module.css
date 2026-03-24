@@ -1,6 +1,6 @@
 .window {
   /* Viewport — clips the strip */
-  width: 72px;
+  width: var(--reel-width, 72px);
   height: 240px;        /* 3 × 80px */
   overflow: hidden;
   position: relative;

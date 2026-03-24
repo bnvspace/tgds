@@ -16,6 +16,20 @@ const DEFAULT_META: MetaProgress = {
 }
 
 const BOSS_CHIPS_REWARD = 20
+const MAX_REEL_SLOTS = 6
+
+function buildStarterReels(reelCount: number) {
+  return Array.from({ length: reelCount }, (_, index) => {
+    const template = STARTER_REELS[index % STARTER_REELS.length]
+
+    return {
+      id: `reel_${index + 1}`,
+      symbolPool: template.symbolPool.map((weightedSymbol) => ({
+        ...weightedSymbol,
+      })),
+    }
+  })
+}
 
 const DEFAULT_PLAYER: Player = {
   hp: 100,
@@ -106,7 +120,7 @@ export const useGameStore = create<GameStore>()(
     const reelBonus = meta.allocatedModifiers
       .filter((m) => m.modifierId === 'reel_slot')
       .reduce((sum, m) => sum + m.count, 0)
-    const reels = STARTER_REELS.slice(0, Math.min(5, 3 + reelBonus))
+    const reels = buildStarterReels(Math.min(MAX_REEL_SLOTS, 3 + reelBonus))
     const map = generateWorldMap(Date.now())
 
     set({
@@ -115,12 +129,14 @@ export const useGameStore = create<GameStore>()(
         maxHp: 100 + hpBonus,
         hp: 100 + hpBonus,
         reels,
-        metaModifiers: meta.allocatedModifiers.map((a) => ({
-          id: a.modifierId,
-          name: a.modifierId,
-          description: '',
-          chipsCost: 0,
-        })),
+        metaModifiers: meta.allocatedModifiers.flatMap((allocation) => (
+          Array.from({ length: allocation.count }, () => ({
+            id: allocation.modifierId,
+            name: allocation.modifierId,
+            description: '',
+            chipsCost: 0,
+          }))
+        )),
         tokens: 30, // Starting balance for the initial shop
       },
       phase: 'initial_shop',

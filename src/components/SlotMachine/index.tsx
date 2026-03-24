@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { GameSymbol } from '@/types'
 import type { SlotReelHandle } from '@/components/SlotReel'
 import SlotReel from '@/components/SlotReel'
@@ -91,10 +92,16 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
       : 'SPIN'
 
     const buttonDisabled = isSpinning ? stopLocked : disabled
+    const reelWidth = reels.length >= 6 ? 48 : reels.length === 5 ? 56 : reels.length === 4 ? 64 : 72
+    const reelGap = reels.length >= 6 ? 4 : reels.length === 5 ? 5 : 6
+    const reelRowStyle = {
+      '--reel-width': `${reelWidth}px`,
+      '--reel-gap': `${reelGap}px`,
+    } as CSSProperties
 
     return (
       <div className={styles.wrap}>
-        <div className={styles.reelsRow}>
+        <div className={styles.reelsRow} style={reelRowStyle}>
           {reels.map((reel, index) => (
             <SlotReel
               key={index}

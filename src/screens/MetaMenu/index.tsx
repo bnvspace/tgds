@@ -36,7 +36,7 @@ const MODIFIERS: Array<{
     icon: 'REEL',
     descKey: 'mod_reel_desc',
     chipsCost: 60,
-    max: 2,
+    max: 3,
   },
   {
     id: 'token_collector',
