@@ -1,0 +1,117 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  background: #0a0a0f;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 2px solid #1c1c2e;
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #c8a96e;
+  margin: 0;
+}
+
+.hp {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #4caf6e;
+}
+
+/* Map area — fills remaining space */
+.mapArea {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* SVG overlay for path lines */
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Node button — absolute positioned */
+.node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  background: #12121e;
+  border: 2px solid #2a2a3e;
+  border-radius: 0;
+  cursor: not-allowed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 #000;
+  padding: 0;
+  transition: none;
+}
+
+.available {
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000, 0 0 8px rgba(200,169,110,0.3);
+}
+
+.available:hover {
+  box-shadow: 2px 2px 0 #000, 0 0 12px rgba(200,169,110,0.5);
+}
+
+.available:active {
+  transform: translate(calc(-50% + 1px), calc(-50% + 1px));
+  box-shadow: 1px 1px 0 #000;
+}
+
+.current {
+  border-color: #c8a96e !important;
+  box-shadow: 2px 2px 0 #000, 0 0 10px rgba(200,169,110,0.6);
+}
+
+.visited {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.nodeIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.bossLabel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 3px;
+  color: #e05252;
+  letter-spacing: 0.05em;
+}
+
+/* Zone legend */
+.legend {
+  display: flex;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid #1c1c2e;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.zoneTag {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 4px;
+  color: #3d3d5c;
+  letter-spacing: 0.05em;
+}

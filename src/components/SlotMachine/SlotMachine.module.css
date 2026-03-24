@@ -1,0 +1,51 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: #12121e;
+  border: 2px solid #3d2b1f;
+  box-shadow:
+    inset -2px -2px 0 #1a0e06,
+    inset 2px 2px 0 #5a3d28,
+    4px 4px 0 #000;
+}
+
+.reelsRow {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* SPIN button */
+.spinBtn {
+  width: 100%;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #c8a96e;
+  background: #1c1c2e;
+  border: 2px solid #c8a96e;
+  padding: 14px;
+  cursor: pointer;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #000;
+  letter-spacing: 0.05em;
+  transition: none;
+}
+
+.spinBtn:hover:not(:disabled) {
+  background: #2a2a3e;
+  box-shadow: 3px 3px 0 #000, 0 0 12px rgba(200,169,110,0.35);
+}
+
+.spinBtn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000;
+}
+
+.spinBtn:disabled,
+.spinning {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

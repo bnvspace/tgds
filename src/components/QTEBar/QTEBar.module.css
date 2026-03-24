@@ -1,0 +1,83 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  background: #0a0a0f;
+  border: 2px solid #2a2a3e;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.active {
+  border-color: #c8a96e;
+  box-shadow: 0 0 8px rgba(200,169,110,0.3);
+}
+
+/* The bar */
+.bar {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  background: #2a0e0e;
+  border: 1px solid #3d1515;
+  overflow: hidden;
+}
+
+/* Zone layers */
+.zoneHit {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(200,169,110,0.25);
+}
+
+.zoneCrit {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(76,175,110,0.35);
+}
+
+.zoneMega {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(240,208,144,0.5);
+  box-shadow: 0 0 4px rgba(240,208,144,0.6);
+}
+
+/* Moving marker */
+.marker {
+  position: absolute;
+  top: -1px;
+  height: calc(100% + 2px);
+  width: 3px;
+  background: #fff;
+  transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(255,255,255,0.9);
+  transition: left 0ms linear;
+}
+
+/* Labels */
+.hint {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #3d3d5c;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.flashLabel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  text-align: center;
+  letter-spacing: 0.05em;
+  animation: flashIn 0.15s steps(2) forwards;
+}
+
+@keyframes flashIn {
+  from { opacity: 0; transform: scale(1.2); }
+  to   { opacity: 1; transform: scale(1); }
+}

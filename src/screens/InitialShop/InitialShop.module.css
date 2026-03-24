@@ -1,0 +1,119 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding: 12px 10px;
+  gap: 10px;
+  background-color: #0a0a0f;
+  overflow-y: auto;
+}
+
+.title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #c8a96e;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: #3d3d5c;
+  text-align: center;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: #12121e;
+  border: 2px solid #3d2b1f;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #000;
+  cursor: pointer;
+  transition: none;
+}
+
+.card:hover {
+  box-shadow: 2px 2px 0 #000, 0 0 8px rgba(200,169,110,0.25);
+}
+
+.card:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #000;
+}
+
+.cardSelected {
+  background: #1c1c2e;
+  box-shadow: 2px 2px 0 #000, 0 0 10px rgba(200,169,110,0.4);
+}
+
+.icon { font-size: 22px; line-height: 1; }
+
+.name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: #c8a96e;
+  text-align: center;
+}
+
+.type {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 4px;
+  color: #3d3d5c;
+}
+
+.rarityDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 0;
+}
+
+.confirmBtn {
+  width: 100%;
+  max-width: 280px;
+  margin-top: auto;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #0a0a0f;
+  background: #c8a96e;
+  border: 2px solid #c8a96e;
+  padding: 12px;
+  cursor: pointer;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #000;
+  letter-spacing: 0.05em;
+  transition: none;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.confirmBtn:not(:disabled):hover {
+  background: #f0d090;
+}
+
+.confirmBtn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #000;
+}

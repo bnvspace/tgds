@@ -1,0 +1,57 @@
+/* ============================================
+   Slot & Dungeons — Dark Fantasy Design System
+   ============================================ */
+
+:root {
+  /* === Colours === */
+  --color-bg: #0d0d0f;
+  --color-surface: #1a1a2e;
+  --color-surface-2: #16213e;
+  --color-border: #4a3728;
+  --color-border-bright: #6b5240;
+  --color-accent: #c8a96e;
+  --color-accent-dim: #8a7048;
+  --color-danger: #c0392b;
+  --color-danger-bright: #e74c3c;
+  --color-spell: #7b68ee;
+  --color-spell-bright: #9d8fff;
+  --color-item: #27ae60;
+  --color-item-bright: #2ecc71;
+  --color-enemy: #e74c3c;
+  --color-text: #e8d5b7;
+  --color-text-muted: #8a7a6a;
+  --color-hp: #e74c3c;
+  --color-hp-low: #c0392b;
+  --color-xp: #f39c12;
+
+  /* === Typography === */
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-base: system-ui, sans-serif;
+
+  /* === Sizes === */
+  --cell-size: 48px;
+  --border-width: 2px;
+  --radius: 0px; /* pixel style — no border radius */
+
+  /* === Z-index === */
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+}
+
+/* ============================================
+   Pixel border utility (double-border effect)
+   ============================================ */
+.pixel-border {
+  border: var(--border-width) solid var(--color-border);
+  box-shadow:
+    0 0 0 2px var(--color-border-bright) inset,
+    0 0 0 4px var(--color-bg) inset;
+}
+
+.pixel-border--accent {
+  border: var(--border-width) solid var(--color-accent);
+  box-shadow:
+    0 0 0 2px var(--color-accent-dim) inset,
+    0 0 0 4px var(--color-bg) inset;
+}
