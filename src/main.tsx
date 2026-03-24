@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import type { EventParams, SafeAreaInset, Telegram, WebApp as TelegramWebApp } from '@twa-dev/types'
 import App from './App'
 import './styles/global.css'
+import { haptics } from '@/utils/haptics'
 
 const TELEGRAM_BG = '#0a0a0f'
 const VIEWPORT_RETRY_DELAYS_MS = [350, 500, 1000] as const
@@ -113,12 +114,18 @@ document.addEventListener('pointerdown', (event) => {
   }
 
   if (
+    event.target.closest('[data-no-haptic="true"]')
+  ) {
+    return
+  }
+
+  if (
     event.target.closest('button') ||
     event.target.closest('[role="button"]') ||
     event.target.closest('a')
   ) {
     try {
-      getTelegramWebApp()?.HapticFeedback?.impactOccurred('light')
+      haptics.button()
     } catch {
       // Ignore unsupported environments.
     }

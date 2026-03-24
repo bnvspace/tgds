@@ -72,7 +72,7 @@ export default function SettingsScreen() {
               <p className={styles.label}>{t('vibration')}</p>
               <p className={styles.value}>{hapticsEnabled ? t('on') : t('off')}</p>
             </div>
-            <button className={styles.toggleBtn} onClick={handleHapticsToggle}>
+            <button className={styles.toggleBtn} onClick={handleHapticsToggle} data-no-haptic="true">
               {hapticsEnabled ? t('on') : t('off')}
             </button>
           </div>

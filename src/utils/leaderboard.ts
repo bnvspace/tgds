@@ -61,7 +61,7 @@ export function calcScore(params: {
   fightsWon: number
   survived: boolean
 }): number {
-  const base = params.fightsWon * 500
-  const bonus = params.survived ? params.tokens * 100 : 0
-  return base + bonus
+  const base = params.tokens * 100 + params.fightsWon * 500
+  const survivalBonus = params.survived ? 1000 : 0
+  return base + survivalBonus
 }

@@ -8,7 +8,7 @@ interface LayoutProps {
 
 const EMPTY_INSETS: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 }
 const TELEGRAM_TOP_OVERLAY_FALLBACK = 72
-const TELEGRAM_TOP_EXTRA_OFFSET = 12
+const TELEGRAM_TOP_EXTRA_OFFSET = 16
 const SAFE_AREA_RETRY_DELAYS_MS = [350, 500, 1000] as const
 
 function readLayoutInsets(tg: TelegramWebApp): SafeAreaInset {

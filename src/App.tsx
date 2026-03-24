@@ -43,7 +43,7 @@ export default function App() {
         })
         // Only register if score > 0 (player did something)
         if (score > 0) {
-          registerUser(tgUser, score, phase === 'run_complete' ? new Date().toISOString() : undefined)
+          registerUser(tgUser, score, new Date().toISOString())
         }
       }
     }

@@ -18,7 +18,7 @@ export interface SlotMachineHandle {
 
 import { forwardRef, useImperativeHandle } from 'react'
 
-const STAGGER_MS = 160  // ms between reel starts
+const STOP_OFFSET_MS = 140  // ms between reel stops
 
 const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
   ({ reels, isSpinning, onSpin, disabled }, ref) => {
@@ -26,11 +26,11 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
 
     useImperativeHandle(ref, () => ({
       spinTo: async (results: GameSymbol[]) => {
-        // Launch all reels with staggered delays, wait for last to finish
+        // Start all reels together and let them stop with slight offsets.
         const promises = results.map((result, i) => {
           const reelRef = reelRefs.current[i]
           if (!reelRef) return Promise.resolve()
-          return reelRef.spin(result, i * STAGGER_MS)
+          return reelRef.spin(result, i * STOP_OFFSET_MS)
         })
         await Promise.all(promises)
       },
