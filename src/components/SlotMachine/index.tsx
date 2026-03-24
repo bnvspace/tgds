@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import type { GameSymbol } from '@/types'
 import type { SlotReelHandle } from '@/components/SlotReel'
 import SlotReel from '@/components/SlotReel'
@@ -11,57 +11,113 @@ interface SlotMachineProps {
   disabled?: boolean
 }
 
-// Expose spin method so parent can trigger via ref
 export interface SlotMachineHandle {
   spinTo: (results: GameSymbol[]) => Promise<void>
+  stopNextReel: () => void
 }
-
-import { forwardRef, useImperativeHandle } from 'react'
-
-const STOP_OFFSET_MS = 120  // ms between reel stops
 
 const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
   ({ reels, isSpinning, onSpin, disabled }, ref) => {
     const reelRefs = useRef<(SlotReelHandle | null)[]>([])
+    const spinPromiseRef = useRef<Promise<void> | null>(null)
+    const resolveSpinRef = useRef<(() => void) | null>(null)
+    const activeSpinRef = useRef(false)
+    const stopLockedRef = useRef(false)
+    const nextStopIndexRef = useRef(0)
+    const totalReelsRef = useRef(reels.length)
+    const [nextStopIndex, setNextStopIndex] = useState(0)
+    const [stopLocked, setStopLocked] = useState(false)
 
     useImperativeHandle(ref, () => ({
       spinTo: async (results: GameSymbol[]) => {
-        // Start all reels together and let them stop with slight offsets.
-        const promises = results.map((result, i) => {
-          const reelRef = reelRefs.current[i]
-          if (!reelRef) return Promise.resolve()
-          return reelRef.spin(result, i * STOP_OFFSET_MS)
+        if (activeSpinRef.current && spinPromiseRef.current) {
+          return spinPromiseRef.current
+        }
+
+        activeSpinRef.current = true
+        stopLockedRef.current = false
+        totalReelsRef.current = results.length
+        nextStopIndexRef.current = 0
+        setNextStopIndex(0)
+        setStopLocked(false)
+
+        results.forEach((result, index) => {
+          reelRefs.current[index]?.startSpin(result)
         })
-        await Promise.all(promises)
+
+        spinPromiseRef.current = new Promise<void>((resolve) => {
+          resolveSpinRef.current = () => {
+            activeSpinRef.current = false
+            stopLockedRef.current = false
+            spinPromiseRef.current = null
+            resolveSpinRef.current = null
+            setNextStopIndex(totalReelsRef.current)
+            setStopLocked(false)
+            resolve()
+          }
+        })
+
+        return spinPromiseRef.current
+      },
+
+      stopNextReel: () => {
+        if (!activeSpinRef.current || stopLockedRef.current) return
+
+        const reelIndex = nextStopIndexRef.current
+        const reelRef = reelRefs.current[reelIndex]
+        if (!reelRef) return
+
+        stopLockedRef.current = true
+        setStopLocked(true)
+
+        void reelRef.stop().then(() => {
+          const nextIndex = reelIndex + 1
+          nextStopIndexRef.current = nextIndex
+          setNextStopIndex(nextIndex)
+          stopLockedRef.current = false
+          setStopLocked(false)
+
+          if (nextIndex >= totalReelsRef.current) {
+            resolveSpinRef.current?.()
+          }
+        })
       },
     }))
 
+    const buttonLabel = isSpinning
+      ? nextStopIndex >= reels.length
+        ? '...'
+        : `STOP ${nextStopIndex + 1}`
+      : 'SPIN'
+
+    const buttonDisabled = isSpinning ? stopLocked : disabled
+
     return (
       <div className={styles.wrap}>
-        {/* Reels row */}
         <div className={styles.reelsRow}>
-          {reels.map((reel, i) => (
+          {reels.map((reel, index) => (
             <SlotReel
-              key={i}
-              ref={(el) => { reelRefs.current[i] = el }}
-              symbolPool={reel.symbolPool.map((ws) => ws.symbol)}
+              key={index}
+              ref={(element) => {
+                reelRefs.current[index] = element
+              }}
+              symbolPool={reel.symbolPool.map((weightedSymbol) => weightedSymbol.symbol)}
               initialSymbol={reel.symbolPool[0]?.symbol}
             />
           ))}
         </div>
 
-        {/* SPIN button */}
         <button
           id="slot-spin-btn"
           className={`${styles.spinBtn} ${isSpinning ? styles.spinning : ''}`}
           onClick={onSpin}
-          disabled={disabled || isSpinning}
+          disabled={buttonDisabled}
         >
-          {isSpinning ? '· · ·' : '▶ SPIN'}
+          {buttonLabel}
         </button>
       </div>
     )
-  }
+  },
 )
 
 SlotMachine.displayName = 'SlotMachine'

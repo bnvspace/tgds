@@ -1,4 +1,4 @@
-import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import type { GameSymbol } from '@/types'
 import { haptics } from '@/utils/haptics'
 import styles from './SlotReel.module.css'
@@ -7,44 +7,54 @@ const SYM_H = 80
 const VISIBLE = 3
 const WIN_H = SYM_H * VISIBLE
 
-const TILE_COUNT = 5
-const BASE_SPIN_MS = 560
-const OVERSHOOT_PX = 4
+const LOOP_REPEATS = 12
+const START_REPEAT_INDEX = 3
+const MAX_REPEAT_INDEX = LOOP_REPEATS - 3
+const SPIN_SPEED_PX_PER_MS = 1.55
+const STOP_LEAD_CELLS = 5
+const STOP_FILLER_CELLS = 4
+const STOP_DURATION_MS = 180
+const OVERSHOOT_PX = 2
 
-function easeInQuad(t: number) {
-  return t * t
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3)
 }
 
-function easeOutBack(t: number, s = 0.08) {
-  return (1 + s) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2) + 1
+function finalTranslate(targetIndex: number): number {
+  return WIN_H / 2 - SYM_H / 2 - targetIndex * SYM_H
 }
 
-function reelEase(t: number): number {
-  if (t < 0.12) return easeInQuad(t / 0.12) * 0.12
-  if (t < 0.76) return 0.12 + ((t - 0.12) / 0.64) * 0.64
-  const brake = (t - 0.76) / 0.24
-  return 0.76 + easeOutBack(brake) * 0.24
+function pickLoopBase(pool: GameSymbol[]): GameSymbol[] {
+  if (pool.length <= 1) return [...pool]
+  return [...pool].sort(() => Math.random() - 0.5)
 }
 
-function buildStrip(pool: GameSymbol[], result: GameSymbol): GameSymbol[] {
-  const strip: GameSymbol[] = []
-  strip.push(...pool.slice(0, 2))
-  strip.push(result)
+function buildLoopStrip(base: GameSymbol[]): GameSymbol[] {
+  return Array.from({ length: LOOP_REPEATS }, () => base).flat()
+}
 
-  for (let i = 0; i < TILE_COUNT; i++) {
-    const shuffled = [...pool].sort(() => Math.random() - 0.5)
-    strip.push(...shuffled)
+function buildStopStrip(
+  loopSymbols: GameSymbol[],
+  topIndex: number,
+  pool: GameSymbol[],
+  result: GameSymbol,
+) {
+  const safeTopIndex = Math.max(0, topIndex)
+  const leading = loopSymbols.slice(safeTopIndex, safeTopIndex + STOP_LEAD_CELLS)
+  const filler = Array.from({ length: STOP_FILLER_CELLS }, (_, index) => (
+    pool[(safeTopIndex + index) % pool.length] ?? result
+  ))
+  const resultIndex = leading.length + filler.length
+
+  return {
+    strip: [...leading, ...filler, result, ...pool.slice(0, 2)],
+    resultIndex,
   }
-
-  return strip
-}
-
-function finalY(resultIndex: number): number {
-  return WIN_H / 2 - SYM_H / 2 - resultIndex * SYM_H
 }
 
 export interface SlotReelHandle {
-  spin: (result: GameSymbol, stopOffsetMs: number) => Promise<void>
+  startSpin: (result: GameSymbol) => void
+  stop: () => Promise<void>
 }
 
 interface SlotReelProps {
@@ -62,115 +72,188 @@ const TYPE_COLOR: Record<string, string> = {
 const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
   ({ symbolPool, initialSymbol }, ref) => {
     const stripRef = useRef<HTMLDivElement>(null)
-    const symbolsRef = useRef<GameSymbol[]>([])
-    const currentYRef = useRef(0)
+    const loopBaseRef = useRef<GameSymbol[]>([])
+    const loopSymbolsRef = useRef<GameSymbol[]>([])
+    const pendingResultRef = useRef<GameSymbol | null>(null)
+    const currentOffsetRef = useRef(0)
+    const lastFrameRef = useRef<number | null>(null)
+    const lastBoundaryRef = useRef(0)
+    const spinningRef = useRef(false)
+    const rafRef = useRef<number | null>(null)
 
     useEffect(() => {
-      if (!stripRef.current) return
+      if (!stripRef.current || symbolPool.length === 0) return
 
       const initial = initialSymbol ?? symbolPool[0]
-      symbolsRef.current = [symbolPool[symbolPool.length - 1], initial, symbolPool[0]]
-      renderStrip(symbolsRef.current)
+      renderStrip([symbolPool[symbolPool.length - 1], initial, symbolPool[0]])
+      applyTranslate(finalTranslate(1))
 
-      const y = finalY(1)
-      currentYRef.current = y
-      stripRef.current.style.transform = `translateY(${y}px)`
-    }, [])
+      return () => {
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current)
+        }
+      }
+    }, [initialSymbol, symbolPool])
 
-    function renderStrip(syms: GameSymbol[]) {
+    function renderStrip(symbols: GameSymbol[]) {
       if (!stripRef.current) return
 
       stripRef.current.innerHTML = ''
-      for (const sym of syms) {
-        if (!sym) continue
+      for (const symbol of symbols) {
+        if (!symbol) continue
         const cell = document.createElement('div')
         cell.className = styles.cell
         cell.innerHTML = `
-          <span class="${styles.icon || ''}">${sym.icon || '?'}</span>
-          <span class="${styles.name || ''}" style="color:${TYPE_COLOR[sym.type] || '#fff'}">${sym.name || ''}</span>
+          <span class="${styles.icon}">${symbol.icon || '?'}</span>
+          <span class="${styles.name}" style="color:${TYPE_COLOR[symbol.type] || '#fff'}">${symbol.name || ''}</span>
         `
         stripRef.current.appendChild(cell)
       }
     }
 
+    function applyTranslate(y: number) {
+      if (!stripRef.current) return
+      stripRef.current.style.transform = `translateY(${y}px)`
+    }
+
+    function runLoop(now: number) {
+      if (!spinningRef.current || loopBaseRef.current.length === 0) return
+
+      if (lastFrameRef.current === null) {
+        lastFrameRef.current = now
+      }
+
+      const delta = now - lastFrameRef.current
+      lastFrameRef.current = now
+
+      const cyclePx = loopBaseRef.current.length * SYM_H
+      const minOffset = cyclePx * START_REPEAT_INDEX
+      const maxOffset = cyclePx * MAX_REPEAT_INDEX
+
+      currentOffsetRef.current += delta * SPIN_SPEED_PX_PER_MS
+      if (currentOffsetRef.current >= maxOffset) {
+        currentOffsetRef.current -= cyclePx * 2
+        if (currentOffsetRef.current < minOffset) {
+          currentOffsetRef.current += cyclePx
+        }
+      }
+
+      applyTranslate(-currentOffsetRef.current)
+
+      const boundary = Math.floor(currentOffsetRef.current / SYM_H)
+      if (boundary > lastBoundaryRef.current) {
+        lastBoundaryRef.current = boundary
+        haptics.reelTick()
+      }
+
+      rafRef.current = requestAnimationFrame(runLoop)
+    }
+
     useImperativeHandle(ref, () => ({
-      spin: (result: GameSymbol, stopOffsetMs: number) => {
-        return new Promise<void>((resolve) => {
-          try {
-            if (!stripRef.current || !symbolPool || symbolPool.length === 0) {
-              console.error('SlotReel: stripRef or symbolPool is invalid', { strip: stripRef.current, symbolPool })
-              return resolve()
-            }
+      startSpin: (result: GameSymbol) => {
+        if (!stripRef.current || symbolPool.length === 0) return
 
-            const strip = buildStrip(symbolPool, result)
-            symbolsRef.current = strip
-            renderStrip(strip)
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current)
+        }
 
-            const resultIndex = 2
-            const startIndex = strip.length - 2
-            const targetY = finalY(resultIndex)
-            const startY = finalY(startIndex)
-            const totalDist = targetY - startY
-            const duration = BASE_SPIN_MS + stopOffsetMs
+        const loopBase = pickLoopBase(symbolPool)
+        const loopSymbols = buildLoopStrip(loopBase)
+        const cyclePx = loopBase.length * SYM_H
 
-            stripRef.current.style.transform = `translateY(${startY}px)`
-            currentYRef.current = startY
+        loopBaseRef.current = loopBase
+        loopSymbolsRef.current = loopSymbols
+        pendingResultRef.current = result
+        currentOffsetRef.current = cyclePx * START_REPEAT_INDEX
+        lastFrameRef.current = null
+        lastBoundaryRef.current = Math.floor(currentOffsetRef.current / SYM_H)
+        spinningRef.current = true
 
-            let startTime: number | null = null
-            let lastSymbolIndex = 0
-
-            function tick(now: number) {
-              if (!startTime) startTime = now
-              const elapsed = now - startTime
-              const t = Math.min(elapsed / duration, 1)
-              const eased = reelEase(t)
-
-              const y = startY + totalDist * eased
-              if (stripRef.current) {
-                stripRef.current.style.transform = `translateY(${y}px)`
-              }
-              currentYRef.current = y
-
-              const distTraveled = Math.abs(y - startY)
-              const symIndex = Math.floor(distTraveled / SYM_H)
-              if (symIndex > lastSymbolIndex) {
-                lastSymbolIndex = symIndex
-                haptics.reelTick()
-              }
-
-              if (t < 1) {
-                requestAnimationFrame(tick)
-                return
-              }
-
-              haptics.reelLand()
-              const overshootY = targetY + OVERSHOOT_PX
-              if (stripRef.current) {
-                stripRef.current.style.transition = 'transform 70ms ease-in'
-                stripRef.current.style.transform = `translateY(${overshootY}px)`
-              }
-
-              setTimeout(() => {
-                if (stripRef.current) {
-                  stripRef.current.style.transition = 'transform 110ms ease-out'
-                  stripRef.current.style.transform = `translateY(${targetY}px)`
-                  currentYRef.current = targetY
-                }
-
-                setTimeout(() => {
-                  if (stripRef.current) stripRef.current.style.transition = ''
-                  resolve()
-                }, 120)
-              }, 70)
-            }
-
-            requestAnimationFrame(tick)
-          } catch (error) {
-            console.error('Reel spin error:', error)
-            resolve()
-          }
-        })
+        renderStrip(loopSymbols)
+        if (stripRef.current) {
+          stripRef.current.style.transition = ''
+        }
+        applyTranslate(-currentOffsetRef.current)
+        rafRef.current = requestAnimationFrame(runLoop)
       },
+
+      stop: () => new Promise<void>((resolve) => {
+        if (!stripRef.current || !pendingResultRef.current || !spinningRef.current) {
+          resolve()
+          return
+        }
+
+        spinningRef.current = false
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current)
+          rafRef.current = null
+        }
+
+        const topIndex = Math.floor(currentOffsetRef.current / SYM_H)
+        const offsetWithinCell = currentOffsetRef.current % SYM_H
+        const { strip, resultIndex } = buildStopStrip(
+          loopSymbolsRef.current,
+          topIndex,
+          symbolPool,
+          pendingResultRef.current,
+        )
+
+        renderStrip(strip)
+
+        const startY = -offsetWithinCell
+        const targetY = finalTranslate(resultIndex)
+        applyTranslate(startY)
+
+        let startTime: number | null = null
+        let lastStopBoundary = 0
+
+        function tick(now: number) {
+          if (startTime === null) {
+            startTime = now
+          }
+
+          const elapsed = now - startTime
+          const progress = Math.min(elapsed / STOP_DURATION_MS, 1)
+          const eased = easeOutCubic(progress)
+          const y = startY + (targetY - startY) * eased
+
+          applyTranslate(y)
+
+          const traveled = Math.abs(y - startY)
+          const boundary = Math.floor(traveled / SYM_H)
+          if (boundary > lastStopBoundary) {
+            lastStopBoundary = boundary
+            haptics.reelTick()
+          }
+
+          if (progress < 1) {
+            requestAnimationFrame(tick)
+            return
+          }
+
+          haptics.reelLand()
+          if (stripRef.current) {
+            stripRef.current.style.transition = 'transform 45ms ease-in'
+            stripRef.current.style.transform = `translateY(${targetY - OVERSHOOT_PX}px)`
+          }
+
+          setTimeout(() => {
+            if (stripRef.current) {
+              stripRef.current.style.transition = 'transform 70ms ease-out'
+              stripRef.current.style.transform = `translateY(${targetY}px)`
+            }
+
+            setTimeout(() => {
+              if (stripRef.current) {
+                stripRef.current.style.transition = ''
+              }
+              resolve()
+            }, 80)
+          }, 45)
+        }
+
+        requestAnimationFrame(tick)
+      }),
     }))
 
     return (

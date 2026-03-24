@@ -68,7 +68,14 @@ export default function CombatScreen() {
 
   // ── SPIN ─────────────────────────────────────────────────
   async function handleSpin() {
-    if (!player || combatPhase !== 'player_idle') return
+    if (!player) return
+
+    if (combatPhase === 'spinning') {
+      slotRef.current?.stopNextReel()
+      return
+    }
+
+    if (combatPhase !== 'player_idle') return
 
     resetArmor()  // per GDD: armor resets at start of PLAYER_SPIN_PHASE
     setCombatPhase('spinning')
@@ -253,7 +260,7 @@ export default function CombatScreen() {
           reels={player.reels}
           isSpinning={combatPhase === 'spinning'}
           onSpin={handleSpin}
-          disabled={combatPhase !== 'player_idle'}
+          disabled={combatPhase !== 'player_idle' && combatPhase !== 'spinning'}
         />
       )}
     </div>
