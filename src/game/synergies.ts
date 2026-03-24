@@ -33,6 +33,29 @@ export const SYNERGIES: Synergy[] = [
     requiredTags: ['weapon', 'diamond'],
     damageMultiplier: 1.5,
   },
+  {
+    id: 'assassin',
+    name: 'Assassin',
+    description: 'Weapon + Poison → +8 bonus damage',
+    requiredTags: ['weapon', 'poison'],
+    bonusDamage: 8,
+  },
+  {
+    id: 'mercenary',
+    name: 'Mercenary',
+    description: 'Weapon + Coin → +4 Dmg, +4 Tokens',
+    requiredTags: ['weapon', 'coin'],
+    bonusDamage: 4,
+    bonusTokens: 4,
+  },
+  {
+    id: 'battlemage',
+    name: 'Battlemage',
+    description: 'Shield + Magic → +10 Armor, +5 Dmg',
+    requiredTags: ['shield', 'magic'],
+    bonusArmor: 10,
+    bonusDamage: 5,
+  },
 ]
 
 // ── Synergy detection ─────────────────────────────────────

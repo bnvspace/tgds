@@ -69,9 +69,31 @@ const DIAMOND: GameSymbol = {
   effect: { tokens: 8, damage: 5 },
 }
 
+const POISON_VIAL: GameSymbol = {
+  id: 'poison_vial',
+  name: 'Poison Vial',
+  icon: '🧪',
+  type: 'special',
+  rarity: 'rare',
+  level: 1,
+  tags: ['poison', 'magic'],
+  effect: { damage: 4 },
+}
+
+const MAGIC_SCROLL: GameSymbol = {
+  id: 'magic_scroll',
+  name: 'Magic Scroll',
+  icon: '📜',
+  type: 'special',
+  rarity: 'rare',
+  level: 1,
+  tags: ['magic'],
+  effect: { magicDamage: 12 },
+}
+
 // All available symbols (Initial Shop pool)
 export const ALL_SYMBOLS: GameSymbol[] = [
-  DAGGER, SHIELD_SYM, COIN, ENERGIZER, BOMB, DIAMOND,
+  DAGGER, SHIELD_SYM, COIN, ENERGIZER, BOMB, DIAMOND, POISON_VIAL, MAGIC_SCROLL,
 ]
 
 // Starter reels (3 reels, common-weighted)

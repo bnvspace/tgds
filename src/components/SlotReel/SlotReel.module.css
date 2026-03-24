@@ -51,30 +51,33 @@
 }
 
 /* Each symbol cell inside the strip */
-:global(.slot-reel-cell),
 .cell {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 80px;         /* SYM_H */
-  gap: 3px;
-  padding: 4px;
 }
 
 .icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 28px;
   line-height: 1;
   display: block;
 }
 
 .name {
+  position: absolute;
+  bottom: 6px;
   font-family: 'Press Start 2P', monospace;
-  font-size: 4px;
+  font-size: 5px;
   text-align: center;
   display: block;
-  max-width: 64px;
+  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

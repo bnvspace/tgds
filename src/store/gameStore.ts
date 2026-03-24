@@ -1,13 +1,16 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { GameState, GamePhase, Player, Enemy, SpinResult, MetaProgress, GameSymbol } from '@/types'
 import type { ModifierId } from '@/types'
 import { STARTER_REELS } from '@/game/symbols'
 import { generateWorldMap } from '@/game/worldMap'
+import { haptics } from '@/utils/haptics'
 
 const DEFAULT_META: MetaProgress = {
   totalChips: 0,
   unlockedSymbolIds: ['dagger', 'shield', 'coin', 'energizer', 'bomb', 'diamond'],
   allocatedModifiers: [],
+  language: 'ru', // Default language
 }
 
 const DEFAULT_PLAYER: Player = {
@@ -67,6 +70,7 @@ interface GameStore extends GameState {
 
   // ── Meta ───────────────────────────────────────────────
   addChips: (amount: number) => void
+  setLanguage: (lang: 'en' | 'ru') => void
 
   // ── WorldMap ─────────────────────────────────────────
   generateMap: () => void
@@ -79,10 +83,12 @@ interface GameStore extends GameState {
   ) => void
 }
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  ...INITIAL,
+export const useGameStore = create<GameStore>()(
+  persist(
+    (set, get) => ({
+      ...INITIAL,
 
-  setPhase: (phase) => set({ phase }),
+      setPhase: (phase) => set({ phase }),
 
   startRun: () => {
     const meta = get().meta
@@ -117,6 +123,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   endRun: (won) => {
+    if (won) haptics.notifySuccess()
+    else haptics.notifyError()
+
     const chipsEarned = won ? 30 : 10
     set((s) => ({
       meta: { ...s.meta, totalChips: s.meta.totalChips + chipsEarned },
@@ -174,7 +183,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }),
 
-  damagePlayer: (amount, type) =>
+  damagePlayer: (amount, type) => {
+    haptics.notifyError()
     set((s) => {
       if (!s.player) return s
       const p = s.player
@@ -190,7 +200,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           armor: type === 'physical' ? Math.max(0, p.armor - amount) : p.armor,
         },
       }
-    }),
+    })
+  },
 
   setSpinResult: (result) => set({ lastSpinResult: result }),
 
@@ -246,6 +257,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       meta: { ...s.meta, totalChips: s.meta.totalChips + amount },
     })),
 
+  setLanguage: (lang) =>
+    set((s) => ({
+      meta: { ...s.meta, language: lang },
+    })),
+
   generateMap: () =>
     set({ mapNodes: generateWorldMap(Date.now()), currentNodeId: null }),
 
@@ -265,4 +281,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         totalChips: remainingChips,
       },
     })),
-}))
+    }),
+    {
+      name: 'tgds-meta-storage',
+      partialize: (state) => ({ meta: state.meta }),
+    }
+  )
+)

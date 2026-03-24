@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ALL_SYMBOLS } from '@/game/symbols'
 import { useGameStore } from '@/store/gameStore'
+import { useTranslation } from '@/i18n'
 import type { GameSymbol } from '@/types'
 import styles from './ShopScreen.module.css'
 
@@ -17,16 +18,6 @@ const SYMBOL_COST: Record<string, number> = {
   epic: 35,
 }
 
-const EFFECT_DESC = (sym: GameSymbol) => {
-  const e = sym.effect
-  const parts = []
-  if (e.damage) parts.push(`⚔ ${e.damage * sym.level}`)
-  if (e.magicDamage) parts.push(`✨ ${e.magicDamage * sym.level}`)
-  if (e.armor) parts.push(`🛡 +${e.armor * sym.level}`)
-  if (e.tokens) parts.push(`🪙 +${e.tokens * sym.level}`)
-  return parts.join(' ') || '—'
-}
-
 export default function ShopScreen() {
   const player = useGameStore((s) => s.player)
   const meta = useGameStore((s) => s.meta)
@@ -34,6 +25,18 @@ export default function ShopScreen() {
   const removeSymbolFromReel = useGameStore((s) => s.removeSymbolFromReel)
   const setPlayer = useGameStore((s) => s.setPlayer)
   const setPhase = useGameStore((s) => s.setPhase)
+  const { t } = useTranslation()
+
+  const EFFECT_DESC = (sym: GameSymbol) => {
+    const e = sym.effect
+    const parts = []
+    if (e.damage) parts.push(`⚔ ${e.damage * sym.level} ${t('dmg')}`)
+    if (e.magicDamage) parts.push(`✨ ${e.magicDamage * sym.level} ${t('magic')}`)
+    if (e.armor) parts.push(`🛡 +${e.armor * sym.level} ${t('armor')}`)
+    if (e.tokens) parts.push(`🪙 +${e.tokens * sym.level} ${t('tokens')}`)
+    if (e.heal) parts.push(`❤ +${e.heal * sym.level} ${t('heal')}`)
+    return parts.join(' ') || '—'
+  }
 
   const [tab, setTab] = useState<'buy' | 'remove'>('buy')
   const [boughtIds, setBoughtIds] = useState<Set<string>>(new Set())
@@ -86,7 +89,7 @@ export default function ShopScreen() {
     >
       {/* Header */}
       <div className={styles.header}>
-        <h2 className={styles.title}>🏪 Shop</h2>
+        <h2 className={styles.title}>🏪 {t('shop_title')}</h2>
         <span className={styles.tokens}>🪙 {player?.tokens ?? 0}</span>
       </div>
 
@@ -96,13 +99,13 @@ export default function ShopScreen() {
           className={`${styles.tab} ${tab === 'buy' ? styles.tabActive : ''}`}
           onClick={() => setTab('buy')}
         >
-          Buy
+          {t('buy_tab')}
         </button>
         <button
           className={`${styles.tab} ${tab === 'remove' ? styles.tabActive : ''}`}
           onClick={() => setTab('remove')}
         >
-          Remove
+          {t('remove_tab')}
         </button>
       </div>
 
@@ -115,7 +118,7 @@ export default function ShopScreen() {
             disabled={!player || player.tokens < 15}
           >
             <span className={styles.shopIcon}>❤️</span>
-            <span className={styles.shopName}>Heal</span>
+            <span className={styles.shopName}>{t('shop_heal')}</span>
             <span className={styles.shopEffect}>+25 HP</span>
             <span className={styles.shopCost}>🪙 15</span>
           </button>
@@ -137,7 +140,7 @@ export default function ShopScreen() {
                 <span className={styles.shopName}>{sym.name}</span>
                 <span className={styles.shopEffect}>{EFFECT_DESC(sym)}</span>
                 <span className={styles.shopCost}>
-                  {bought ? '✓ Added' : `🪙 ${cost}`}
+                  {bought ? `✓ ${t('added')}` : `🪙 ${cost}`}
                 </span>
               </button>
             )
@@ -147,10 +150,10 @@ export default function ShopScreen() {
 
       {tab === 'remove' && (
         <div className={styles.removeSection}>
-          <p className={styles.removeHint}>Remove symbols to increase reel density</p>
+          <p className={styles.removeHint}>{t('remove_hint')}</p>
           {player?.reels.map((reel, ri) => (
             <div key={ri} className={styles.reelGroup}>
-              <span className={styles.reelLabel}>Reel {ri + 1}</span>
+              <span className={styles.reelLabel}>{t('reel')} {ri + 1}</span>
               <div className={styles.reelSymbols}>
                 {reel.symbolPool.map((ws, si) => (
                   <button
@@ -158,7 +161,7 @@ export default function ShopScreen() {
                     className={styles.removeBtn}
                     onClick={() => removeSymbol(ws.symbol.id, ri)}
                     disabled={reel.symbolPool.length <= 1}
-                    title={`Remove ${ws.symbol.name}`}
+                    title={`${t('remove_symbol')} ${ws.symbol.name}`}
                   >
                     {ws.symbol.icon}
                     <span className={styles.removeX}>✕</span>
@@ -171,7 +174,7 @@ export default function ShopScreen() {
       )}
 
       <button className={styles.proceedBtn} onClick={proceed}>
-        ▶ CONTINUE
+        ▶ {t('continue')}
       </button>
     </motion.div>
   )

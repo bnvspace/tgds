@@ -8,6 +8,7 @@ import QTEBar from '@/components/QTEBar'
 import { spin } from '@/game/slotGenerator'
 import { resolveSymbols } from '@/game/resolution'
 import { makeQTEResult, checkMegaCrit } from '@/game/slotGenerator'
+import { useTranslation } from '@/i18n'
 import type { GameSymbol, QTETier } from '@/types'
 import styles from './CombatScreen.module.css'
 
@@ -41,12 +42,13 @@ export default function CombatScreen() {
   const damagePlayer = useGameStore((s) => s.damagePlayer)
   const advanceEnemyPattern = useGameStore((s) => s.advanceEnemyPattern)
   const setPhase = useGameStore((s) => s.setPhase)
+  const { t } = useTranslation()
 
   const slotRef = useRef<SlotMachineHandle>(null)
   const pendingRef = useRef<GameSymbol[]>([])
 
   const [combatPhase, setCombatPhase] = useState<CombatPhase>('player_idle')
-  const [combatLog, setCombatLog] = useState<string[]>(['⚔ Combat started!'])
+  const [combatLog, setCombatLog] = useState<string[]>([t('combat_start')])
 
   useEffect(() => {
     if (!currentEnemy) setEnemy(DEV_ENEMY)
@@ -65,7 +67,7 @@ export default function CombatScreen() {
 
     resetArmor()  // per GDD: armor resets at start of PLAYER_SPIN_PHASE
     setCombatPhase('spinning')
-    log('🎰 Spinning reels...')
+    log(t('spin_reels'))
 
     // Determine results BEFORE animation (per GDD requirement 11)
     const symbols = spin(player.reels)
@@ -78,7 +80,7 @@ export default function CombatScreen() {
 
     // ── QTE activates after last reel stops ─────────────────
     setCombatPhase('qte_active')
-    log('▶ TAP the QTE bar!')
+    log(t('tap_qte'))
   }
 
   // ── QTE RESULT → RESOLVE ─────────────────────────────────
@@ -95,11 +97,11 @@ export default function CombatScreen() {
     applyDamageToEnemy(result.totalDamage)
 
     const line = [
-      qte.tier !== 'miss' ? `✨ ${qte.tier.toUpperCase()} ×${qte.multiplier}` : '💨 Miss',
+      qte.tier !== 'miss' ? `✨ ${qte.tier.toUpperCase()} ×${qte.multiplier}` : t('miss'),
       result.synergiesActivated.length
         ? `🔥 ${result.synergiesActivated.map((s) => s.name).join(', ')}`
         : null,
-      result.totalDamage > 0 ? `⚔ ${Math.round(result.totalDamage)} dmg` : null,
+      result.totalDamage > 0 ? `⚔ ${Math.round(result.totalDamage)} ${t('dmg')}` : null,
       result.totalArmor > 0 ? `🛡 +${result.totalArmor}` : null,
       result.totalTokens > 0 ? `🪙 +${result.totalTokens}` : null,
     ].filter(Boolean).join('  ')
@@ -107,7 +109,7 @@ export default function CombatScreen() {
 
     // Check enemy death
     if (enemy.hp - result.totalDamage <= 0) {
-      log('💀 Enemy defeated!')
+      log(t('enemy_defeated'))
       setCombatPhase('done')
       setTimeout(() => setPhase('shop'), 1200)
       return
@@ -118,13 +120,14 @@ export default function CombatScreen() {
     await new Promise((r) => setTimeout(r, 700))
 
     const pattern = enemy.attackPattern[enemy.patternIndex]
-    damagePlayer(pattern.damage, pattern.type)
+    const attackType = pattern.type === 'debuff' ? 'physical' : pattern.type
+    damagePlayer(pattern.damage, attackType)
     log(`👺 "${pattern.description}" — ${pattern.damage} ${pattern.type}`)
     advanceEnemyPattern()
 
     // Check player death
     if (player.hp - pattern.damage <= 0) {
-      log('💀 You died...')
+      log(t('you_died'))
       setCombatPhase('done')
       setTimeout(() => setPhase('game_over'), 1200)
       return
@@ -141,7 +144,7 @@ export default function CombatScreen() {
       {/* Player HP bar */}
       <div className={styles.playerBar}>
         <div className={styles.playerBarTop}>
-          <span className={styles.playerLabel}>HP</span>
+          <span className={styles.playerLabel}>{t('hp_label')}</span>
           <span className={styles.hpValues}>{player?.hp ?? 0}/{player?.maxHp ?? 100}</span>
           <span className={styles.armor}>🛡 {player?.armor ?? 0}</span>
           <span className={styles.tokens}>🪙 {player?.tokens ?? 0}</span>

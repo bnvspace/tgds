@@ -29,7 +29,6 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
         // Launch all reels with staggered delays, wait for last to finish
         const promises = results.map((result, i) => {
           const reelRef = reelRefs.current[i]
-          const pool = reels[i]?.symbolPool.map((ws) => ws.symbol) ?? [result]
           if (!reelRef) return Promise.resolve()
           return reelRef.spin(result, i * STAGGER_MS)
         })

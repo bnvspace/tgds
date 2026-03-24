@@ -101,3 +101,44 @@ git push
 - [`vision.md`](vision.md) — техническое видение
 - [`conventions.md`](conventions.md) — правила кода
 - [`tasklist.md`](tasklist.md) — план итераций
+
+---
+
+## Деплой на Vercel
+
+```bash
+# Первый деплой
+npx vercel login          # один раз, авторизация через браузер
+npx vercel --prod         # имя проекта: slot-daggers (только строчные, без спецсимволов)
+
+# Обновление (повторный деплой)
+npm run build             # проверить сборку локально
+npx vercel --prod         # пересобрать и обновить URL
+```
+
+**Текущий Production URL:** https://slot-daggers.vercel.app
+
+---
+
+## Регистрация в Telegram
+
+1. **Создать бота** → написать `@BotFather`:
+   ```
+   /newbot
+   → имя: Slot Daggers Game
+   → юзернейм: SlotDaggersBot (должен заканчиваться на Bot)
+   → сохранить TOKEN
+   ```
+
+2. **Создать WebApp**:
+   ```
+   /newapp
+   → выбрать бота
+   → Title: Slot & Daggers
+   → Short name: play
+   → URL: https://slot-daggers.vercel.app
+   ```
+
+3. **Ссылка для игры:** `t.me/SlotDaggersBot/play`
+
+> При каждом обновлении кода — только `npx vercel --prod`, ссылка не меняется.

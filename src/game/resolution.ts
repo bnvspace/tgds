@@ -16,7 +16,7 @@ export function resolveSymbols(
   symbols: GameSymbol[],
   qte: QTEResult,
   player: Player,
-  enemy: Enemy
+  _enemy: Enemy
 ): SpinResult {
   // ── STEP 1: Collect ──────────────────────────────────
   const rolledSymbols = symbols

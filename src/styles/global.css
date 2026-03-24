@@ -11,8 +11,8 @@
 }
 
 html, body, #root {
-  height: 100%;
-  width: 100%;
+  height: 100dvh;
+  width: 100vw;
   overflow: hidden; /* TMA — no scroll */
 }
 
@@ -20,6 +20,7 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-base);
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Prevent text selection on game taps */

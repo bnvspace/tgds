@@ -11,7 +11,7 @@
 
 .title {
   font-family: 'Press Start 2P', monospace;
-  font-size: 9px;
+  font-size: 14px;
   color: #c8a96e;
   letter-spacing: 0.05em;
   margin: 0;
@@ -19,8 +19,8 @@
 
 .subtitle {
   font-family: 'Press Start 2P', monospace;
-  font-size: 5px;
-  color: #3d3d5c;
+  font-size: 8px;
+  color: var(--color-text-muted);
   text-align: center;
   line-height: 1.8;
   margin: 0;
@@ -39,52 +39,49 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 10px 6px;
+  gap: 8px;
+  min-height: 90px;
+  padding: 12px 6px;
   background: #12121e;
   border: 2px solid #3d2b1f;
   border-radius: 0;
   box-shadow: 2px 2px 0 #000;
   cursor: pointer;
-  transition: none;
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 
-.card:hover {
-  box-shadow: 2px 2px 0 #000, 0 0 8px rgba(200,169,110,0.25);
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: 2px 2px 0 #000, 0 0 8px rgba(200,169,110,0.25);
+  }
 }
 
 .card:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 #000;
+  box-shadow: 1px 1px 0 #000 !important;
 }
 
 .cardSelected {
   background: #1c1c2e;
+  border-color: #c8a96e;
   box-shadow: 2px 2px 0 #000, 0 0 10px rgba(200,169,110,0.4);
 }
 
-.icon { font-size: 22px; line-height: 1; }
+.icon { font-size: 28px; line-height: 1; }
 
 .name {
   font-family: 'Press Start 2P', monospace;
-  font-size: 5px;
+  font-size: 9px;
   color: #c8a96e;
   text-align: center;
+  word-wrap: break-word;
 }
 
 .type {
   font-family: 'Press Start 2P', monospace;
-  font-size: 4px;
-  color: #3d3d5c;
-}
-
-.rarityDot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
-  border-radius: 0;
+  font-size: 8px;
+  color: #b5a89d;
+  text-align: center;
 }
 
 .confirmBtn {
@@ -92,16 +89,16 @@
   max-width: 280px;
   margin-top: auto;
   font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: 12px;
   color: #0a0a0f;
   background: #c8a96e;
   border: 2px solid #c8a96e;
-  padding: 12px;
+  padding: 14px;
   cursor: pointer;
   border-radius: 0;
   box-shadow: 3px 3px 0 #000;
   letter-spacing: 0.05em;
-  transition: none;
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .confirmBtn:disabled {
@@ -109,8 +106,10 @@
   cursor: not-allowed;
 }
 
-.confirmBtn:not(:disabled):hover {
-  background: #f0d090;
+@media (hover: hover) {
+  .confirmBtn:not(:disabled):hover {
+    background: #f0d090;
+  }
 }
 
 .confirmBtn:active:not(:disabled) {

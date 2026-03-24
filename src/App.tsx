@@ -5,7 +5,6 @@ import InitialShopScreen from '@/screens/InitialShop'
 import CombatScreen from '@/screens/CombatScreen'
 import ShopScreen from '@/screens/ShopScreen'
 import WorldMapScreen from '@/screens/WorldMapScreen'
-import MetaMenu from '@/screens/MetaMenu'
 import Layout from '@/components/Layout'
 
 export default function App() {
@@ -49,7 +48,6 @@ export default function App() {
 // ── Inline placeholder screens ────────────────────────────
 function GameOverScreen() {
   const resetGame = useGameStore((s) => s.resetGame)
-  const meta = useGameStore((s) => s.meta)
   const addChips = useGameStore((s) => s.addChips)
 
   function handleRetry() {

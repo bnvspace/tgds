@@ -1,6 +1,4 @@
-```javascript
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useGameStore } from '@/store/gameStore'
 import { haptics } from '@/utils/haptics'
 import type { QTETier } from '@/types'
 import styles from './QTEBar.module.css'
@@ -18,8 +16,8 @@ const ZONES = {
   // rest = miss — red
 }
 
-const SPEED = 0.004        // fraction per ms
-const ANIM_DURATION = 2400 // ms before auto-miss
+const SPEED = 0.0013       // fraction per ms (замедлено для играбельности)
+const ANIM_DURATION = 3500 // ms before auto-miss
 
 export default function QTEBar({ active, onResult }: QTEBarProps) {
   const [markerPos, setMarkerPos] = useState(0)   // 0..1
@@ -85,7 +83,8 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
     }
   }, [active, resolve])
 
-  function handleTap() {
+  function handleTap(e: React.SyntheticEvent) {
+    e.preventDefault()
     if (!active || resolved) return
     resolve(posRef.current)
   }
@@ -106,7 +105,8 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
   return (
     <div
       className={`${styles.wrap} ${active && !resolved ? styles.active : ''}`}
-      onClick={handleTap}
+      onTouchStart={handleTap}
+      onMouseDown={handleTap}
       role="button"
       aria-label="QTE timing bar — tap at the right moment"
     >

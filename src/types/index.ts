@@ -25,7 +25,7 @@ export type SymbolType = 'damage' | 'defense' | 'economy' | 'special'
 export type Rarity = 'common' | 'rare' | 'epic'
 export type SymbolTag =
   | 'weapon' | 'magic' | 'explosive'
-  | 'coin' | 'shield' | 'diamond'
+  | 'coin' | 'shield' | 'diamond' | 'poison'
 
 // ── Zone types ───────────────────────────────────────────
 export type ZoneType = 'swamp' | 'sewer' | 'citadel'
@@ -89,6 +89,7 @@ export interface Synergy {
   requiredTags: SymbolTag[]    // must all appear in same spin
   minCount?: number             // min occurrences of each tag
   damageMultiplier?: number     // S_syn applied in step 3
+  bonusDamage?: number
   bonusTokens?: number
   bonusArmor?: number
 }
@@ -200,6 +201,7 @@ export interface MetaProgress {
   unlockedSymbolIds: string[]   // grows as bosses are defeated
   // Free respec before each run (Refund All)
   allocatedModifiers: Array<{ modifierId: ModifierId; count: number }>
+  language?: 'en' | 'ru'
 }
 
 // ── World Map ─────────────────────────────────────────────

@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useGameStore } from '@/store/gameStore'
+import { useTranslation } from '@/i18n'
 import type { MapNode } from '@/types'
 import styles from './WorldMapScreen.module.css'
 
@@ -19,25 +21,26 @@ const NODE_COLOR: Record<string, string> = {
   boss:   '#e05252',
 }
 
-const ZONE_LABEL: Record<string, string> = {
-  swamp:   '🌿 Swamp',
-  sewer:   '💧 Sewer',
-  citadel: '🏰 Citadel',
-}
-
 export default function WorldMapScreen() {
   const mapNodes = useGameStore((s) => s.mapNodes)
   const currentNodeId = useGameStore((s) => s.currentNodeId)
   const setPhase = useGameStore((s) => s.setPhase)
   const setEnemy = useGameStore((s) => s.setEnemy)
   const player = useGameStore((s) => s.player)
-
   const store = useGameStore()
+  const { t } = useTranslation()
+
+  const ZONE_LABEL: Record<string, string> = {
+    swamp:   t('zone_swamp'),
+    sewer:   t('zone_sewer'),
+    citadel: t('zone_citadel'),
+  }
+
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
   // Available nodes = connections from currentNode, or floor-0 nodes if no current
   const availableIds: Set<string> = new Set()
   if (!currentNodeId) {
-    // First selection = floor 0 nodes (no incoming connections = they are starting nodes)
     const hasIncoming = new Set(mapNodes.flatMap((n) => n.connections))
     mapNodes.filter((n) => !hasIncoming.has(n.id)).forEach((n) => availableIds.add(n.id))
   } else {
@@ -45,8 +48,20 @@ export default function WorldMapScreen() {
     current?.connections.forEach((id) => availableIds.add(id))
   }
 
-  function selectNode(node: MapNode) {
+  function handleNodeClick(node: MapNode) {
     if (!availableIds.has(node.id) || node.visited) return
+    if (selectedNodeId === node.id) {
+      setSelectedNodeId(null) // deselect
+    } else {
+      setSelectedNodeId(node.id)
+    }
+  }
+
+  function handleTravel() {
+    if (!selectedNodeId) return
+    const node = mapNodes.find((n) => n.id === selectedNodeId)
+    if (!node) return
+
     store.setCurrentNode(node.id)
 
     if (node.type === 'shop' || node.type === 'heal') {
@@ -73,7 +88,7 @@ export default function WorldMapScreen() {
       exit={{ opacity: 0 }}
     >
       <div className={styles.header}>
-        <h2 className={styles.title}>World Map</h2>
+        <h2 className={styles.title}>{t('world_map_title')}</h2>
         <span className={styles.hp}>❤ {player?.hp ?? 0}/{player?.maxHp ?? 100}</span>
       </div>
 
@@ -104,28 +119,36 @@ export default function WorldMapScreen() {
           const isAvailable = availableIds.has(node.id)
           const isCurrent = node.id === currentNodeId
           const isVisited = node.visited
+          const isSelected = node.id === selectedNodeId
 
           return (
             <motion.button
               key={node.id}
-              className={`${styles.node} ${isAvailable ? styles.available : ''} ${isCurrent ? styles.current : ''} ${isVisited ? styles.visited : ''}`}
+              className={`${styles.node} ${isAvailable ? styles.available : ''} ${isCurrent ? styles.current : ''} ${isVisited ? styles.visited : ''} ${isSelected ? styles.selected : ''}`}
               style={{
                 left: `${node.position.x * 100}%`,
                 top:  `${node.position.y * 100}%`,
                 borderColor: isAvailable ? NODE_COLOR[node.type] : '#2a2a3e',
               }}
-              onClick={() => selectNode(node)}
+              onClick={() => handleNodeClick(node)}
               disabled={!isAvailable || isVisited}
-              whileTap={isAvailable ? { scale: 0.9 } : undefined}
             >
               <span className={styles.nodeIcon}>{NODE_ICON[node.type]}</span>
               {node.type === 'boss' && (
-                <span className={styles.bossLabel}>BOSS</span>
+                <span className={styles.bossLabel}>{t('boss')}</span>
               )}
             </motion.button>
           )
         })}
       </div>
+
+      {selectedNodeId && (
+        <div className={styles.travelOverlay}>
+          <button className={styles.travelBtn} onClick={handleTravel}>
+            {t('travel')}
+          </button>
+        </div>
+      )}
 
       {/* Zone legend */}
       <div className={styles.legend}>

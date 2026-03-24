@@ -1,6 +1,5 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
 import type { GameSymbol } from '@/types'
-import { SYMBOL_LIBRARY } from '@/game/symbols'
 import { haptics } from '@/utils/haptics'
 import styles from './SlotReel.module.css'
 
@@ -34,15 +33,14 @@ function reelEase(t: number): number {
 // ── Strip builder ─────────────────────────────────────────
 function buildStrip(pool: GameSymbol[], result: GameSymbol): GameSymbol[] {
   const strip: GameSymbol[] = []
+  // Symbols move DOWN visually, which means the strip translates UP in Y coordinate.
+  // We want to END on the result (at index 2) and START at the bottom (index strip.length - 2)
+  strip.push(...pool.slice(0, 2))
+  strip.push(result)
   for (let i = 0; i < TILE_COUNT; i++) {
-    // shuffle pool order each tile pass so it looks random
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
     strip.push(...shuffled)
   }
-  // Make sure result is the last symbol (index strip.length after push)
-  strip.push(result)
-  // Add a few after result so it doesn't look cut off
-  strip.push(...pool.slice(0, 2))
   return strip
 }
 
@@ -93,11 +91,12 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
       if (!stripRef.current) return
       stripRef.current.innerHTML = ''
       for (const sym of syms) {
+        if (!sym) continue
         const cell = document.createElement('div')
         cell.className = styles.cell
         cell.innerHTML = `
-          <span class="${styles.icon}">${sym.icon}</span>
-          <span class="${styles.name}" style="color:${TYPE_COLOR[sym.type]}">${sym.name}</span>
+          <span class="${styles.icon || ''}">${sym.icon || '?'}</span>
+          <span class="${styles.name || ''}" style="color:${TYPE_COLOR[sym.type] || '#fff'}">${sym.name || ''}</span>
         `
         stripRef.current.appendChild(cell)
       }
@@ -108,61 +107,71 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
       spin: (result: GameSymbol, delay: number) => {
         return new Promise<void>((resolve) => {
           setTimeout(() => {
-            if (!stripRef.current) return resolve()
-
-            // Build a long strip ending with result
-            const strip = buildStrip(symbolPool, result)
-            symbolsRef.current = strip
-            renderStrip(strip)
-
-            const resultIndex = strip.length - 3 // result is index TILE_COUNT * pool.length
-            const targetY = finalY(resultIndex)
-            const startY = finalY(1)            // start showing first symbol
-            const totalDist = Math.abs(targetY - startY)
-            const duration = 1800              // ms for this reel
-
-            stripRef.current.style.transform = `translateY(${startY}px)`
-            currentYRef.current = startY
-
-            let startTime: number | null = null
-
-            function tick(now: number) {
-              if (!startTime) startTime = now
-              const elapsed = now - startTime
-              const t = Math.min(elapsed / duration, 1)
-              const eased = reelEase(t)
-
-              // Spin goes UP (negative Y direction)
-              const y = startY - totalDist * eased
-              if (stripRef.current) {
-                stripRef.current.style.transform = `translateY(${y}px)`
+            try {
+              if (!stripRef.current || !symbolPool || symbolPool.length === 0) {
+                console.error('SlotReel: stripRef or symbolPool is invalid', { strip: stripRef.current, symbolPool })
+                return resolve()
               }
-              currentYRef.current = y
 
-              if (t < 1) {
-                requestAnimationFrame(tick)
-              } else {
-                // Overshoot → snap back
-                const overshootY = targetY - OVERSHOOT_PX
+              // Build a long strip where result is near the top
+              const strip = buildStrip(symbolPool, result)
+              symbolsRef.current = strip
+              renderStrip(strip)
+
+              const resultIndex = 2 // result is at index 2
+              const startIndex = strip.length - 2
+              const targetY = finalY(resultIndex)
+              const startY = finalY(startIndex)   // start showing from bottom
+              const totalDist = targetY - startY // Positive distance (goes UP mathematically, DOWN visually)
+              const duration = 1800              // ms for this reel
+
+              stripRef.current.style.transform = `translateY(${startY}px)`
+              currentYRef.current = startY
+
+              let startTime: number | null = null
+
+              function tick(now: number) {
+                if (!startTime) startTime = now
+                const elapsed = now - startTime
+                const t = Math.min(elapsed / duration, 1)
+                const eased = reelEase(t)
+
+                // Spin visually goes DOWN (positive Y direction increase)
+                const y = startY + totalDist * eased
                 if (stripRef.current) {
-                  stripRef.current.style.transition = `transform 80ms ease-in`
-                  stripRef.current.style.transform = `translateY(${overshootY}px)`
+                  stripRef.current.style.transform = `translateY(${y}px)`
                 }
-                setTimeout(() => {
+                currentYRef.current = y
+
+                if (t < 1) {
+                  requestAnimationFrame(tick)
+                } else {
+                  // Overshoot → snap back
+                  try { haptics.impactMedium() } catch (e) { /* ignore */ }
+                  const overshootY = targetY + OVERSHOOT_PX
                   if (stripRef.current) {
-                    stripRef.current.style.transition = `transform 120ms ease-out`
-                    stripRef.current.style.transform = `translateY(${targetY}px)`
-                    currentYRef.current = targetY
+                    stripRef.current.style.transition = `transform 80ms ease-in`
+                    stripRef.current.style.transform = `translateY(${overshootY}px)`
                   }
                   setTimeout(() => {
-                    if (stripRef.current) stripRef.current.style.transition = ''
-                    resolve()
-                  }, 130)
-                }, 90)
+                    if (stripRef.current) {
+                      stripRef.current.style.transition = `transform 120ms ease-out`
+                      stripRef.current.style.transform = `translateY(${targetY}px)`
+                      currentYRef.current = targetY
+                    }
+                    setTimeout(() => {
+                      if (stripRef.current) stripRef.current.style.transition = ''
+                      resolve()
+                    }, 130)
+                  }, 90)
+                }
               }
-            }
 
-            requestAnimationFrame(tick)
+              requestAnimationFrame(tick)
+            } catch (error) {
+              console.error('Reel spin error:', error)
+              resolve() // MUST resolve to prevent hang
+            }
           }, delay)
         })
       },

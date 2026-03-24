@@ -8,27 +8,27 @@ declare global {
 
 export const haptics = {
   impactLight() {
-    if (WebApp.isExpanded || window.Telegram?.WebApp) {
+    if (WebApp.HapticFeedback?.impactOccurred) {
       WebApp.HapticFeedback.impactOccurred('light')
     }
   },
   impactMedium() {
-    if (WebApp.isExpanded || window.Telegram?.WebApp) {
+    if (WebApp.HapticFeedback?.impactOccurred) {
       WebApp.HapticFeedback.impactOccurred('medium')
     }
   },
   impactHeavy() {
-    if (WebApp.isExpanded || window.Telegram?.WebApp) {
+    if (WebApp.HapticFeedback?.impactOccurred) {
       WebApp.HapticFeedback.impactOccurred('heavy')
     }
   },
   notifySuccess() {
-    if (WebApp.isExpanded || window.Telegram?.WebApp) {
+    if (WebApp.HapticFeedback?.notificationOccurred) {
       WebApp.HapticFeedback.notificationOccurred('success')
     }
   },
   notifyError() {
-    if (WebApp.isExpanded || window.Telegram?.WebApp) {
+    if (WebApp.HapticFeedback?.notificationOccurred) {
       WebApp.HapticFeedback.notificationOccurred('error')
     }
   },
