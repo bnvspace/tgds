@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import type { EventParams, SafeAreaInset, WebApp as TelegramWebApp } from '@twa-dev/types'
-import WebApp from '@twa-dev/sdk'
+import type { EventParams, SafeAreaInset, Telegram, WebApp as TelegramWebApp } from '@twa-dev/types'
 import App from './App'
 import './styles/global.css'
 
@@ -11,6 +10,11 @@ const EMPTY_INSETS: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 }
 
 function setCssVar(name: string, value: string) {
   document.documentElement.style.setProperty(name, value)
+}
+
+function getTelegramWebApp(): TelegramWebApp | null {
+  const candidate = (window as Window & { Telegram?: Telegram }).Telegram?.WebApp
+  return candidate ?? null
 }
 
 function readViewportHeight() {
@@ -59,7 +63,11 @@ setCssVar('--tg-theme-secondary-bg-color', TELEGRAM_BG)
 setCssVar('--tg-theme-header-bg-color', TELEGRAM_BG)
 
 try {
-  const tg = WebApp
+  const tg = getTelegramWebApp()
+  if (!tg) {
+    throw new Error('Telegram WebApp is unavailable')
+  }
+
   const syncViewport = () => syncViewportCssVars(tg)
   const handleFullscreenChanged = () => {
     syncViewport()
@@ -72,14 +80,18 @@ try {
 
   syncViewport()
   tg.ready()
-  tg.disableVerticalSwipes()
+  if (typeof tg.disableVerticalSwipes === 'function') {
+    tg.disableVerticalSwipes()
+  }
   tg.setHeaderColor(TELEGRAM_BG)
   tg.setBackgroundColor(TELEGRAM_BG)
-  tg.onEvent('viewportChanged', syncViewport)
-  tg.onEvent('safeAreaChanged', syncViewport)
-  tg.onEvent('contentSafeAreaChanged', syncViewport)
-  tg.onEvent('fullscreenChanged', handleFullscreenChanged)
-  tg.onEvent('fullscreenFailed', handleFullscreenFailed)
+  if (typeof tg.onEvent === 'function') {
+    tg.onEvent('viewportChanged', syncViewport)
+    tg.onEvent('safeAreaChanged', syncViewport)
+    tg.onEvent('contentSafeAreaChanged', syncViewport)
+    tg.onEvent('fullscreenChanged', handleFullscreenChanged)
+    tg.onEvent('fullscreenFailed', handleFullscreenFailed)
+  }
   tg.expand()
 
   if (tg.isVersionAtLeast('8.0')) {
@@ -106,7 +118,7 @@ document.addEventListener('pointerdown', (event) => {
     event.target.closest('a')
   ) {
     try {
-      WebApp.HapticFeedback.impactOccurred('light')
+      getTelegramWebApp()?.HapticFeedback?.impactOccurred('light')
     } catch {
       // Ignore unsupported environments.
     }

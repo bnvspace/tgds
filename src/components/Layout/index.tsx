@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import type { SafeAreaInset, WebApp as TelegramWebApp } from '@twa-dev/types'
-import WebApp from '@twa-dev/sdk'
+import type { SafeAreaInset, Telegram, WebApp as TelegramWebApp } from '@twa-dev/types'
 import styles from './Layout.module.css'
 
 interface LayoutProps {
@@ -31,12 +30,22 @@ function areInsetsEqual(a: SafeAreaInset, b: SafeAreaInset) {
     && a.right === b.right
 }
 
+function getTelegramWebApp(): TelegramWebApp | null {
+  const candidate = (window as Window & { Telegram?: Telegram }).Telegram?.WebApp
+  return candidate ?? null
+}
+
 export default function Layout({ children }: LayoutProps) {
   const [insets, setInsets] = useState<SafeAreaInset>(EMPTY_INSETS)
   const timeoutIdsRef = useRef<number[]>([])
 
   useEffect(() => {
-    const tg = WebApp
+    const tg = getTelegramWebApp()
+    if (!tg || typeof tg.onEvent !== 'function' || typeof tg.offEvent !== 'function') {
+      setInsets(EMPTY_INSETS)
+      return
+    }
+    const webApp = tg
 
     function clearScheduledUpdates() {
       timeoutIdsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId))
@@ -44,7 +53,7 @@ export default function Layout({ children }: LayoutProps) {
     }
 
     function updateInsets() {
-      const nextInsets = readLayoutInsets(tg)
+      const nextInsets = readLayoutInsets(webApp)
       setInsets((currentInsets) => (
         areInsetsEqual(currentInsets, nextInsets) ? currentInsets : nextInsets
       ))
@@ -68,16 +77,16 @@ export default function Layout({ children }: LayoutProps) {
 
     updateInsets()
     scheduleRetryMeasurements()
-    tg.onEvent('fullscreenChanged', handleFullscreenChanged)
-    tg.onEvent('safeAreaChanged', handleSafeAreaChanged)
-    tg.onEvent('contentSafeAreaChanged', handleSafeAreaChanged)
+    webApp.onEvent('fullscreenChanged', handleFullscreenChanged)
+    webApp.onEvent('safeAreaChanged', handleSafeAreaChanged)
+    webApp.onEvent('contentSafeAreaChanged', handleSafeAreaChanged)
     window.addEventListener('resize', handleSafeAreaChanged)
 
     return () => {
       clearScheduledUpdates()
-      tg.offEvent('fullscreenChanged', handleFullscreenChanged)
-      tg.offEvent('safeAreaChanged', handleSafeAreaChanged)
-      tg.offEvent('contentSafeAreaChanged', handleSafeAreaChanged)
+      webApp.offEvent('fullscreenChanged', handleFullscreenChanged)
+      webApp.offEvent('safeAreaChanged', handleSafeAreaChanged)
+      webApp.offEvent('contentSafeAreaChanged', handleSafeAreaChanged)
       window.removeEventListener('resize', handleSafeAreaChanged)
     }
   }, [])
