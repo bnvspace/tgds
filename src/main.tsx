@@ -7,20 +7,34 @@ import './styles/global.css'
 
 const TELEGRAM_BG = '#0a0a0f'
 const VIEWPORT_RETRY_DELAYS_MS = [350, 500, 1000] as const
+const EMPTY_INSETS: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 }
 
 function setCssVar(name: string, value: string) {
   document.documentElement.style.setProperty(name, value)
 }
 
-function syncInsetVars(prefix: '--tg-safe-area' | '--tg-content-safe-area', inset: SafeAreaInset) {
-  setCssVar(`${prefix}-top`, `${inset.top}px`)
-  setCssVar(`${prefix}-bottom`, `${inset.bottom}px`)
-  setCssVar(`${prefix}-left`, `${inset.left}px`)
-  setCssVar(`${prefix}-right`, `${inset.right}px`)
+function readViewportHeight() {
+  return Math.max(
+    window.innerHeight || 0,
+    document.documentElement.clientHeight || 0,
+    document.body?.clientHeight || 0,
+  )
+}
+
+function syncInsetVars(
+  prefix: '--tg-safe-area' | '--tg-content-safe-area',
+  inset: SafeAreaInset | undefined,
+) {
+  const nextInset = inset ?? EMPTY_INSETS
+
+  setCssVar(`${prefix}-top`, `${nextInset.top}px`)
+  setCssVar(`${prefix}-bottom`, `${nextInset.bottom}px`)
+  setCssVar(`${prefix}-left`, `${nextInset.left}px`)
+  setCssVar(`${prefix}-right`, `${nextInset.right}px`)
 }
 
 function syncViewportCssVars(tg: TelegramWebApp) {
-  const stableHeight = tg.viewportStableHeight || tg.viewportHeight || window.innerHeight
+  const stableHeight = tg.viewportStableHeight || tg.viewportHeight || readViewportHeight()
 
   if (stableHeight > 0) {
     setCssVar('--app-height', `${stableHeight}px`)
@@ -36,7 +50,10 @@ function scheduleViewportSync(tg: TelegramWebApp) {
   })
 }
 
-setCssVar('--app-height', `${window.innerHeight}px`)
+const initialViewportHeight = readViewportHeight()
+if (initialViewportHeight > 0) {
+  setCssVar('--app-height', `${initialViewportHeight}px`)
+}
 setCssVar('--tg-theme-bg-color', TELEGRAM_BG)
 setCssVar('--tg-theme-secondary-bg-color', TELEGRAM_BG)
 setCssVar('--tg-theme-header-bg-color', TELEGRAM_BG)
