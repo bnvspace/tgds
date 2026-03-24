@@ -107,7 +107,7 @@ export default function MetaMenu() {
           className={styles.backBtn}
           onClick={() => { playButtonSFX(); setPhase('meta_menu') }}
         >
-          {'<-'} {t('back')}
+          {t('back')}
         </button>
         <h2 className={styles.title}>{t('modifiers_title')}</h2>
         <span className={styles.chips}>

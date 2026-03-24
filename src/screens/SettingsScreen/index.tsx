@@ -47,7 +47,7 @@ export default function SettingsScreen() {
     >
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={handleBack}>
-          {'<-'} {t('back')}
+          {t('back')}
         </button>
         <h2 className={styles.title}>{t('settings')}</h2>
         <div className={styles.headerSpacer} />

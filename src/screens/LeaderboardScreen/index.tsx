@@ -44,7 +44,7 @@ export default function LeaderboardScreen() {
     >
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={back}>
-          ← {t('back')}
+          {t('back')}
         </button>
         <h2 className={styles.title}>🏆 {t('leaderboard')}</h2>
       </div>
