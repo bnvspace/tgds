@@ -1,16 +1,38 @@
 import { motion } from 'framer-motion'
 import { useGameStore } from '@/store/gameStore'
 import { useTranslation } from '@/i18n'
+import { playButtonSFX, primeAudioPlayback } from '@/utils/audio'
+import { haptics } from '@/utils/haptics'
 import styles from './StartScreen.module.css'
 
 export default function StartScreen() {
   const startRun = useGameStore((s) => s.startRun)
   const setPhase = useGameStore((s) => s.setPhase)
-  const setLanguage = useGameStore((s) => s.setLanguage)
   const { t, lang } = useTranslation()
 
-  function toggleLang() {
-    setLanguage(lang === 'ru' ? 'en' : 'ru')
+  function handleStartRun() {
+    primeAudioPlayback()
+    haptics.action()
+    playButtonSFX()
+    startRun()
+  }
+
+  function handleOpenModifiers() {
+    haptics.button()
+    playButtonSFX()
+    setPhase('modifiers')
+  }
+
+  function handleOpenLeaderboard() {
+    haptics.button()
+    playButtonSFX()
+    setPhase('leaderboard')
+  }
+
+  function handleOpenSettings() {
+    haptics.button()
+    playButtonSFX()
+    setPhase('settings')
   }
 
   return (
@@ -20,16 +42,8 @@ export default function StartScreen() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <button 
-        className={styles.langBtn} 
-        onClick={toggleLang}
-        style={{ position: 'absolute', top: 16, right: 16, background: '#12121e', color: '#c8a96e', border: '2px solid #3d2b1f', padding: '8px', cursor: 'pointer', fontFamily: '"Press Start 2P", monospace', fontSize: '10px' }}
-      >
-        {lang === 'ru' ? '🇷🇺 RU' : '🇬🇧 EN'}
-      </button>
-
       <div className={styles.logo}>
-        <h1 className={styles.title}>SLOT</h1>
+        <h1 className={styles.title}>GIFT'S</h1>
         <span className={styles.ampersand}>&amp;</span>
         <h1 className={styles.title}>DAGGERS</h1>
       </div>
@@ -49,14 +63,17 @@ export default function StartScreen() {
       </p>
 
       <div className={styles.actions}>
-        <button className={styles.btnPrimary} onClick={startRun}>
-          ▶ {t('start_run')}
+        <button className={styles.btnPrimary} onClick={handleStartRun}>
+          {'>'} {t('start_run')}
         </button>
-        <button
-          className={styles.btnSecondary}
-          onClick={() => setPhase('meta_menu')}
-        >
-          ⚙ MODIFIERS
+        <button className={styles.btnSecondary} onClick={handleOpenModifiers}>
+          Modifiers
+        </button>
+        <button className={styles.btnSecondary} onClick={handleOpenLeaderboard}>
+          {t('leaderboard')}
+        </button>
+        <button className={styles.btnSecondary} onClick={handleOpenSettings}>
+          {t('settings')}
         </button>
       </div>
 

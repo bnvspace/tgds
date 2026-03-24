@@ -7,13 +7,13 @@ interface LayoutProps {
 }
 
 const EMPTY_INSETS: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 }
-const FULLSCREEN_TOP_FALLBACK = 52
+const TELEGRAM_TOP_OVERLAY_FALLBACK = 56
 const SAFE_AREA_RETRY_DELAYS_MS = [350, 500, 1000] as const
 
 function readLayoutInsets(tg: TelegramWebApp): SafeAreaInset {
   const safe = tg.safeAreaInset ?? EMPTY_INSETS
   const content = tg.contentSafeAreaInset ?? EMPTY_INSETS
-  const top = content.top || safe.top || (tg.isFullscreen ? FULLSCREEN_TOP_FALLBACK : 0)
+  const top = Math.max(content.top, safe.top, TELEGRAM_TOP_OVERLAY_FALLBACK)
 
   return {
     top,

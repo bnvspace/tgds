@@ -1,0 +1,110 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #0a0a0f;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 2px solid #1c1c2e;
+}
+
+.backBtn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #b5a89d;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #c8a96e;
+  margin: 0;
+}
+
+.headerSpacer {
+  width: 72px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px;
+  background: #12121e;
+  border: 2px solid #3d2b1f;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #c8a96e;
+  margin: 0;
+}
+
+.value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #b5a89d;
+  margin: 6px 0 0;
+}
+
+.toggleBtn,
+.languageBtn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #c8a96e;
+  background: #1c1c2e;
+  border: 2px solid #3d2b1f;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.toggleBtn:active,
+.languageBtn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #000;
+}
+
+.languageRow {
+  display: flex;
+  gap: 8px;
+}
+
+.languageBtn {
+  flex: 1;
+}
+
+.languageBtnActive {
+  color: #0a0a0f;
+  background: #c8a96e;
+  border-color: #c8a96e;
+}

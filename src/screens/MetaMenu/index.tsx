@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '@/store/gameStore'
 import { useTranslation } from '@/i18n'
 import type { ModifierId } from '@/types'
+import { playButtonSFX, primeAudioPlayback } from '@/utils/audio'
 import styles from './MetaMenu.module.css'
 
 const MODIFIERS: Array<{
@@ -16,33 +17,33 @@ const MODIFIERS: Array<{
   {
     id: 'health_core',
     nameKey: 'mod_health_name',
-    icon: '❤️',
+    icon: 'HP',
     descKey: 'mod_health_desc',
-    chipsCost: 25,
+    chipsCost: 15,
     max: 5,
   },
   {
     id: 'physical_strength',
     nameKey: 'mod_str_name',
-    icon: '⚔️',
+    icon: 'DMG',
     descKey: 'mod_str_desc',
-    chipsCost: 50,
+    chipsCost: 30,
     max: 3,
   },
   {
     id: 'reel_slot',
     nameKey: 'mod_reel_name',
-    icon: '🎰',
+    icon: 'REEL',
     descKey: 'mod_reel_desc',
-    chipsCost: 100,
+    chipsCost: 60,
     max: 2,
   },
   {
     id: 'token_collector',
     nameKey: 'mod_token_name',
-    icon: '🪙',
+    icon: 'COIN',
     descKey: 'mod_token_desc',
-    chipsCost: 40,
+    chipsCost: 20,
     max: 3,
   },
 ]
@@ -50,9 +51,9 @@ const MODIFIERS: Array<{
 export default function MetaMenu() {
   const meta = useGameStore((s) => s.meta)
   const startRun = useGameStore((s) => s.startRun)
-  const setLanguage = useGameStore((s) => s.setLanguage)
+  const setPhase = useGameStore((s) => s.setPhase)
   const store = useGameStore()
-  const { t, lang } = useTranslation()
+  const { t } = useTranslation()
 
   const [localMods, setLocalMods] = useState(() =>
     Object.fromEntries(MODIFIERS.map((m) => [
@@ -65,6 +66,7 @@ export default function MetaMenu() {
   function allocate(id: ModifierId, cost: number, max: number) {
     const current = localMods[id] ?? 0
     if (current >= max || localChips < cost) return
+    playButtonSFX()
     setLocalMods((prev) => ({ ...prev, [id]: current + 1 }))
     setLocalChips((prev) => prev - cost)
   }
@@ -72,17 +74,19 @@ export default function MetaMenu() {
   function refund(id: ModifierId, cost: number) {
     const current = localMods[id] ?? 0
     if (current <= 0) return
+    playButtonSFX()
     setLocalMods((prev) => ({ ...prev, [id]: current - 1 }))
     setLocalChips((prev) => prev + cost)
   }
 
   function refundAll() {
+    playButtonSFX()
     setLocalMods(Object.fromEntries(MODIFIERS.map((m) => [m.id, 0])))
     setLocalChips(meta.totalChips)
   }
 
   function handleStart() {
-    // Apply local allocation to meta before starting
+    primeAudioPlayback()
     const allocated = MODIFIERS
       .filter((m) => (localMods[m.id] ?? 0) > 0)
       .map((m) => ({ modifierId: m.id, count: localMods[m.id] }))
@@ -98,18 +102,16 @@ export default function MetaMenu() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <button 
-        className={styles.langBtn} 
-        onClick={() => setLanguage(lang === 'ru' ? 'en' : 'ru')}
-        style={{ position: 'absolute', top: 16, left: 16, background: '#12121e', color: '#c8a96e', border: '2px solid #3d2b1f', padding: '8px', cursor: 'pointer', fontFamily: '"Press Start 2P", monospace', fontSize: '10px' }}
-      >
-        {lang === 'ru' ? '🇷🇺' : '🇬🇧'}
-      </button>
-
       <div className={styles.header}>
+        <button
+          onClick={() => { playButtonSFX(); setPhase('meta_menu') }}
+          style={{ background: 'none', border: 'none', color: '#b5a89d', fontFamily: '"Press Start 2P", monospace', fontSize: '8px', cursor: 'pointer', padding: '4px' }}
+        >
+          {'<-'} {t('close')}
+        </button>
         <h2 className={styles.title}>{t('modifiers_title')}</h2>
         <span className={styles.chips}>
-          🔵 {localChips} {t('chips')}
+          {localChips} {t('chips')}
         </span>
       </div>
 
@@ -123,7 +125,7 @@ export default function MetaMenu() {
               <div className={styles.modInfo}>
                 <span className={styles.modName}>{t(mod.nameKey)}</span>
                 <span className={styles.modDesc}>{t(mod.descKey)}</span>
-                <span className={styles.modCost}>🔵 {mod.chipsCost} · {t('max_label')} {mod.max}</span>
+                <span className={styles.modCost}>{mod.chipsCost} · {t('max_label')} {mod.max}</span>
               </div>
               <div className={styles.modControls}>
                 <button
@@ -131,7 +133,7 @@ export default function MetaMenu() {
                   onClick={() => refund(mod.id, mod.chipsCost)}
                   disabled={count <= 0}
                 >
-                  −
+                  -
                 </button>
                 <span className={styles.ctrlCount}>{count}</span>
                 <button
@@ -149,10 +151,10 @@ export default function MetaMenu() {
 
       <div className={styles.footer}>
         <button className={styles.refundBtn} onClick={refundAll}>
-          ↩ {t('reset_all')}
+          {t('reset_all')}
         </button>
         <button className={styles.startBtn} onClick={handleStart}>
-          ▶ {t('start_run')}
+          {'>'} {t('start_run')}
         </button>
       </div>
     </motion.div>

@@ -8,6 +8,7 @@
 // ── Game phases ──────────────────────────────────────────
 export type GamePhase =
   | 'meta_menu'         // main menu + microchip modifiers (free respec)
+  | 'settings'          // app settings: language / audio / haptics
   | 'initial_shop'      // FIRST PHASE: pick starting symbols (6-7 available)
   | 'world_map'         // SELECT_NODE (Swamp / Sewer / Citadel, no backtrack)
   | 'combat_start'      // init Enemy, armor does NOT reset here
@@ -19,13 +20,15 @@ export type GamePhase =
   | 'shop'              // SHOP (buy/remove/upgrade symbols)
   | 'game_over'
   | 'run_complete'      // FINAL_BOSS_DEFEATED → chips awarded
+  | 'leaderboard'       // Global leaderboard screen
+  | 'modifiers'         // MetaMenu modifier allocation screen
 
 // ── Symbol types ─────────────────────────────────────────
 export type SymbolType = 'damage' | 'defense' | 'economy' | 'special'
 export type Rarity = 'common' | 'rare' | 'epic'
 export type SymbolTag =
   | 'weapon' | 'magic' | 'explosive'
-  | 'coin' | 'shield' | 'diamond' | 'poison'
+  | 'coin' | 'shield' | 'diamond' | 'poison' | 'heal'
 
 // ── Zone types ───────────────────────────────────────────
 export type ZoneType = 'swamp' | 'sewer' | 'citadel'
@@ -202,6 +205,8 @@ export interface MetaProgress {
   // Free respec before each run (Refund All)
   allocatedModifiers: Array<{ modifierId: ModifierId; count: number }>
   language?: 'en' | 'ru'
+  isMuted?: boolean
+  isHapticsEnabled?: boolean
 }
 
 // ── World Map ─────────────────────────────────────────────

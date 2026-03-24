@@ -7,10 +7,12 @@ import { generateWorldMap } from '@/game/worldMap'
 import { haptics } from '@/utils/haptics'
 
 const DEFAULT_META: MetaProgress = {
-  totalChips: 0,
+  totalChips: 100, // Starting chips so modifiers are immediately usable
   unlockedSymbolIds: ['dagger', 'shield', 'coin', 'energizer', 'bomb', 'diamond'],
   allocatedModifiers: [],
   language: 'ru', // Default language
+  isMuted: false, // Default sound on
+  isHapticsEnabled: true,
 }
 
 const DEFAULT_PLAYER: Player = {
@@ -71,6 +73,8 @@ interface GameStore extends GameState {
   // ── Meta ───────────────────────────────────────────────
   addChips: (amount: number) => void
   setLanguage: (lang: 'en' | 'ru') => void
+  toggleMute: () => void
+  toggleHaptics: () => void
 
   // ── WorldMap ─────────────────────────────────────────
   generateMap: () => void
@@ -113,6 +117,7 @@ export const useGameStore = create<GameStore>()(
           description: '',
           chipsCost: 0,
         })),
+        tokens: 30, // Starting balance for the initial shop
       },
       phase: 'initial_shop',
       currentEnemy: null,
@@ -262,6 +267,19 @@ export const useGameStore = create<GameStore>()(
       meta: { ...s.meta, language: lang },
     })),
 
+  toggleMute: () =>
+    set((s) => ({
+      meta: { ...s.meta, isMuted: !s.meta.isMuted },
+    })),
+
+  toggleHaptics: () =>
+    set((s) => ({
+      meta: {
+        ...s.meta,
+        isHapticsEnabled: s.meta.isHapticsEnabled !== false ? false : true,
+      },
+    })),
+
   generateMap: () =>
     set({ mapNodes: generateWorldMap(Date.now()), currentNodeId: null }),
 
@@ -285,6 +303,20 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'tgds-meta-storage',
       partialize: (state) => ({ meta: state.meta }),
+      version: 3,
+      migrate: (persistedState: any, version: number) => {
+        // v0 -> v2: give all existing players 100 starting chips
+        if (version < 2 && persistedState?.meta) {
+          persistedState.meta.totalChips = Math.max(
+            persistedState.meta.totalChips ?? 0,
+            100
+          )
+        }
+        if (persistedState?.meta && version < 3) {
+          persistedState.meta.isHapticsEnabled = persistedState.meta.isHapticsEnabled ?? true
+        }
+        return persistedState
+      },
     }
   )
 )

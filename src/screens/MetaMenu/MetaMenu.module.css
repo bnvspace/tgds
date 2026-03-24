@@ -46,7 +46,14 @@
   box-shadow: 2px 2px 0 #000;
 }
 
-.modIcon { font-size: 20px; flex-shrink: 0; }
+.modIcon {
+  width: 44px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #c8a96e;
+  flex-shrink: 0;
+  text-align: center;
+}
 
 .modInfo {
   flex: 1;
