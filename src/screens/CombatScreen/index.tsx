@@ -10,7 +10,7 @@ import { resolveSymbols } from '@/game/resolution'
 import { playButtonSFX, playCoinSFX, playErrorSFX, playHealSFX, playHitSFX, playShieldSFX } from '@/utils/audio'
 import { haptics } from '@/utils/haptics'
 import { useTranslation } from '@/i18n'
-import type { GameSymbol, QTETier, NodeType } from '@/types'
+import type { GameSymbol, QTETier } from '@/types'
 import styles from './CombatScreen.module.css'
 
 const DEV_ENEMY = {
@@ -33,21 +33,9 @@ const DEV_ENEMY = {
 
 type CombatPhase = 'player_idle' | 'spinning' | 'qte_active' | 'resolving' | 'enemy_turn' | 'done'
 
-function hashSeed(value: string) {
-  let hash = 0
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
-  }
-
-  return hash
-}
-
 export default function CombatScreen() {
   const player = useGameStore((state) => state.player)
   const currentEnemy = useGameStore((state) => state.currentEnemy)
-  const currentNodeId = useGameStore((state) => state.currentNodeId)
-  const mapNodes = useGameStore((state) => state.mapNodes)
   const setEnemy = useGameStore((state) => state.setEnemy)
   const resetArmor = useGameStore((state) => state.resetArmor)
   const applySpinResult = useGameStore((state) => state.applySpinResult)
@@ -63,7 +51,7 @@ export default function CombatScreen() {
   const pendingRef = useRef<GameSymbol[]>([])
   const encounterRef = useRef<string | null>(null)
 
-  const [combatPhase, setCombatPhase] = useState<CombatPhase>('enemy_turn')
+  const [combatPhase, setCombatPhase] = useState<CombatPhase>('player_idle')
   const [combatLog, setCombatLog] = useState<string[]>([t('combat_start')])
   const [showFleeConfirm, setShowFleeConfirm] = useState(false)
 
@@ -80,19 +68,7 @@ export default function CombatScreen() {
     setCombatLog((prev) => [...prev.slice(-5), message])
   }
 
-  function shouldEnemyStartFirst() {
-    const currentNode = mapNodes.find((node) => node.id === currentNodeId)
-    const currentNodeType: NodeType | undefined = currentNode?.type
-
-    if (enemy.isBoss || currentNodeType === 'elite') {
-      return true
-    }
-
-    const seed = `${currentNodeId ?? 'free'}:${enemy.id}`
-    return hashSeed(seed) % 2 === 0
-  }
-
-  async function performEnemyTurn(openingTurn = false) {
+  async function performEnemyTurn() {
     const liveState = useGameStore.getState()
     const livePlayer = liveState.player
     const liveEnemy = liveState.currentEnemy ?? enemy
@@ -100,7 +76,7 @@ export default function CombatScreen() {
     if (!livePlayer || !liveEnemy) return
 
     setCombatPhase('enemy_turn')
-    await new Promise((resolve) => setTimeout(resolve, openingTurn ? 480 : 700))
+    await new Promise((resolve) => setTimeout(resolve, 700))
 
     const pattern = liveEnemy.attackPattern[liveEnemy.patternIndex]
     const attackType = pattern.type === 'debuff' ? 'physical' : pattern.type
@@ -129,20 +105,14 @@ export default function CombatScreen() {
   useEffect(() => {
     if (!player) return
 
-    const encounterId = `${currentNodeId ?? 'free'}:${enemy.id}:${enemy.maxHp}`
+    const encounterId = `${enemy.id}:${enemy.maxHp}`
     if (encounterRef.current === encounterId) return
 
     encounterRef.current = encounterId
     pendingRef.current = []
     setCombatLog([t('combat_start')])
-
-    if (shouldEnemyStartFirst()) {
-      void performEnemyTurn(true)
-      return
-    }
-
     setCombatPhase('player_idle')
-  }, [player, currentNodeId, mapNodes, enemy.id, enemy.maxHp, t])
+  }, [player, enemy.id, enemy.maxHp, t])
 
   async function handleSpin() {
     if (!player) return
