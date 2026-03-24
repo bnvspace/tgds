@@ -12,7 +12,7 @@ const MEDALS = ['🥇', '🥈', '🥉']
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('ru-RU', {
-    day: '2-digit', month: '2-digit', year: '2-digit'
+    day: '2-digit', month: '2-digit', year: '2-digit',
   })
 }
 
@@ -42,13 +42,13 @@ export default function LeaderboardScreen() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
     >
-      {/* Header */}
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={back}>← {t('close')}</button>
+        <button className={styles.backBtn} onClick={back}>
+          ← {t('back')}
+        </button>
         <h2 className={styles.title}>🏆 {t('leaderboard')}</h2>
       </div>
 
-      {/* Table */}
       <div className={styles.tableWrap}>
         {loading ? (
           <div className={styles.loading}>⌛ {t('loading')}...</div>
@@ -86,7 +86,6 @@ export default function LeaderboardScreen() {
         )}
       </div>
 
-      {/* My rank hint */}
       {tgUser && !loading && (
         <div className={styles.myRankHint}>
           {(() => {

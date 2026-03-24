@@ -15,6 +15,8 @@ const DEFAULT_META: MetaProgress = {
   isHapticsEnabled: true,
 }
 
+const BOSS_CHIPS_REWARD = 20
+
 const DEFAULT_PLAYER: Player = {
   hp: 100,
   maxHp: 100,
@@ -206,6 +208,9 @@ export const useGameStore = create<GameStore>()(
           ...s.player,
           fightsWon: s.player.fightsWon + 1,
         },
+        meta: enemy.isBoss
+          ? { ...s.meta, totalChips: s.meta.totalChips + BOSS_CHIPS_REWARD }
+          : s.meta,
         currentEnemy: null,
         currentZone: enemy.isBoss ? 'swamp' : s.currentZone,
         worldTier: nextWorldTier,

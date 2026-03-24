@@ -17,16 +17,21 @@
 
 .backBtn {
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  font-size: 10px;
   color: #b5a89d;
-  background: none;
-  border: none;
+  background: #12121e;
+  border: 2px solid #3d2b1f;
   cursor: pointer;
   flex-shrink: 0;
-  padding: 4px;
+  padding: 10px 12px;
+  box-shadow: 2px 2px 0 #000;
+  white-space: nowrap;
 }
 
-.backBtn:active { opacity: 0.6; }
+.backBtn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #000;
+}
 
 .title {
   font-family: 'Press Start 2P', monospace;
