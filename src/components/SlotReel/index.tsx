@@ -7,9 +7,9 @@ const SYM_H = 80
 const VISIBLE = 3
 const WIN_H = SYM_H * VISIBLE
 
-const TILE_COUNT = 6
-const BASE_SPIN_MS = 1120
-const OVERSHOOT_PX = 6
+const TILE_COUNT = 5
+const BASE_SPIN_MS = 560
+const OVERSHOOT_PX = 4
 
 function easeInQuad(t: number) {
   return t * t
@@ -20,10 +20,10 @@ function easeOutBack(t: number, s = 0.08) {
 }
 
 function reelEase(t: number): number {
-  if (t < 0.18) return easeInQuad(t / 0.18) * 0.18
-  if (t < 0.72) return 0.18 + ((t - 0.18) / 0.54) * 0.54
-  const brake = (t - 0.72) / 0.28
-  return 0.72 + easeOutBack(brake) * 0.28
+  if (t < 0.12) return easeInQuad(t / 0.12) * 0.12
+  if (t < 0.76) return 0.12 + ((t - 0.12) / 0.64) * 0.64
+  const brake = (t - 0.76) / 0.24
+  return 0.76 + easeOutBack(brake) * 0.24
 }
 
 function buildStrip(pool: GameSymbol[], result: GameSymbol): GameSymbol[] {

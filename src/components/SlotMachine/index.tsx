@@ -18,7 +18,7 @@ export interface SlotMachineHandle {
 
 import { forwardRef, useImperativeHandle } from 'react'
 
-const STOP_OFFSET_MS = 140  // ms between reel stops
+const STOP_OFFSET_MS = 120  // ms between reel stops
 
 const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
   ({ reels, isSpinning, onSpin, disabled }, ref) => {
