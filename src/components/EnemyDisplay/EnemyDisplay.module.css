@@ -11,14 +11,14 @@
 /* Enemy viewport — like a monitor above the slot */
 .viewport {
   width: 100%;
-  min-height: 128px;
+  min-height: 196px;
   background: #0a0a0f;
   border: 2px solid #2a2a3e;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 12px;
+  padding: 20px 16px;
 }
 
 .bossViewport {
@@ -26,7 +26,7 @@
   padding-block: 28px;
 }
 
-.icon { font-size: 56px; line-height: 1; }
+.icon { font-size: 76px; line-height: 1; }
 
 .bossViewport .icon {
   font-size: 124px;
