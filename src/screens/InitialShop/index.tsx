@@ -65,8 +65,8 @@ export default function InitialShopScreen() {
       return
     }
 
-    setReelsFromSelection(chosenSymbols)
     setPlayer({ ...player, tokens: remainingTokens })
+    setReelsFromSelection(chosenSymbols)
     setPhase('world_map')
   }
 
