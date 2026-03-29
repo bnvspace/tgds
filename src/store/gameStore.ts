@@ -55,6 +55,44 @@ const INITIAL: GameState = {
   meta: DEFAULT_META,
 }
 
+const RESUMABLE_COMBAT_PHASES = new Set<GamePhase>([
+  'combat_start',
+  'player_spin',
+  'resolving',
+  'enemy_action',
+  'turn_end',
+])
+
+function normalizePersistedPhase(
+  phase: GamePhase,
+  player: Player | null,
+  currentEnemy: Enemy | null,
+): GamePhase {
+  if (!player) {
+    return ['settings', 'leaderboard', 'modifiers', 'meta_menu'].includes(phase)
+      ? phase
+      : 'meta_menu'
+  }
+
+  if (RESUMABLE_COMBAT_PHASES.has(phase)) {
+    return currentEnemy ? 'combat_start' : 'world_map'
+  }
+
+  if (phase === 'post_combat') {
+    return 'shop'
+  }
+
+  if (phase === 'initial_shop' || phase === 'world_map' || phase === 'shop') {
+    return phase
+  }
+
+  if (phase === 'game_over' || phase === 'run_complete') {
+    return phase
+  }
+
+  return phase
+}
+
 interface GameStore extends GameState {
   // ── Phase transitions ──────────────────────────────────
   setPhase: (phase: GamePhase) => void
@@ -339,8 +377,34 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'tgds-meta-storage',
-      partialize: (state) => ({ meta: state.meta }),
-      version: 3,
+      partialize: (state) => ({
+        phase: normalizePersistedPhase(state.phase, state.player, state.currentEnemy),
+        currentZone: state.currentZone,
+        worldTier: state.worldTier,
+        player: state.player,
+        currentEnemy: state.currentEnemy,
+        mapNodes: state.mapNodes,
+        currentNodeId: state.currentNodeId,
+        lastSpinResult: state.lastSpinResult,
+        meta: state.meta,
+      }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<GameState> | undefined
+        const player = persisted?.player ?? currentState.player
+        const currentEnemy = player ? (persisted?.currentEnemy ?? currentState.currentEnemy) : null
+
+        return {
+          ...currentState,
+          ...persisted,
+          currentEnemy,
+          phase: normalizePersistedPhase(
+            persisted?.phase ?? currentState.phase,
+            player,
+            currentEnemy,
+          ),
+        }
+      },
+      version: 4,
       migrate: (persistedState: any, version: number) => {
         // v0 -> v2: give all existing players 100 starting chips
         if (version < 2 && persistedState?.meta) {
@@ -351,6 +415,13 @@ export const useGameStore = create<GameStore>()(
         }
         if (persistedState?.meta && version < 3) {
           persistedState.meta.isHapticsEnabled = persistedState.meta.isHapticsEnabled ?? true
+        }
+        if (persistedState && version < 4) {
+          persistedState.phase = normalizePersistedPhase(
+            persistedState.phase ?? INITIAL.phase,
+            persistedState.player ?? null,
+            persistedState.currentEnemy ?? null,
+          )
         }
         return persistedState
       },

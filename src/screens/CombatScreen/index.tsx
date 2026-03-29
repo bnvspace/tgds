@@ -267,6 +267,7 @@ export default function CombatScreen() {
         <div className={styles.hpBar}>
           <motion.div
             className={styles.hpFill}
+            initial={false}
             animate={{ width: `${hpPercent}%` }}
             transition={{ duration: 0.4 }}
           />
