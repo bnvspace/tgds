@@ -253,29 +253,18 @@ export const useGameStore = create<GameStore>()(
 
   setSpinResult: (result) => set({ lastSpinResult: result }),
 
-  // Distribute selected symbols across reels (round-robin)
-  // Each symbol gets a weight of 10; equal probability
+  // Every selected starting symbol is added to every reel so it can appear
+  // across the full slot, not only on a single lane.
   setReelsFromSelection: (selected: GameSymbol[]) =>
     set((s) => {
       if (!s.player) return s
       const reelCount = s.player.reels.length
       const reels = Array.from({ length: reelCount }, (_, i) => ({
         id: `reel_${i + 1}`,
-        symbolPool: selected
-          .filter((_, idx) => idx % reelCount === i || selected.length < reelCount)
-          .concat(
-            // If fewer symbols than reels, give every reel the full pool
-            selected.length < reelCount ? selected : []
-          )
-          .map((sym) => ({ symbol: sym, weight: 10 })),
+        symbolPool: selected.map((sym) => ({ symbol: sym, weight: 10 })),
       }))
-      // Fallback: every reel gets full pool if pool is tiny
-      const safeReels = reels.map((r) =>
-        r.symbolPool.length === 0
-          ? { ...r, symbolPool: selected.map((sym) => ({ symbol: sym, weight: 10 })) }
-          : r
-      )
-      return { player: { ...s.player, reels: safeReels } }
+
+      return { player: { ...s.player, reels } }
     }),
 
   addSymbolToReel: (symbol, reelIndex) =>
