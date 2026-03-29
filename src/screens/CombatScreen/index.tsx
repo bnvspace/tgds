@@ -169,11 +169,13 @@ export default function CombatScreen() {
     }
 
     if (enemy.hp - result.totalDamage <= 0) {
-      recordCombatVictory(enemy)
       log(t('enemy_defeated'))
       haptics.victory()
       setCombatPhase('done')
-      setTimeout(() => setPhase('shop'), 1200)
+      setTimeout(() => {
+        recordCombatVictory(enemy)
+        setPhase('shop')
+      }, 1200)
       return
     }
 
