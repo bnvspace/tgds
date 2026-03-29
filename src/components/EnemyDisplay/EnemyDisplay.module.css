@@ -11,13 +11,18 @@
 /* Enemy viewport — like a monitor above the slot */
 .viewport {
   width: 100%;
-  min-height: 80px;
+  min-height: 96px;
   background: #0a0a0f;
   border: 2px solid #2a2a3e;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  padding: 12px;
+}
+
+.bossViewport {
+  min-height: 152px;
 }
 
 .icon { font-size: 48px; line-height: 1; }
@@ -89,7 +94,7 @@
 .nextLabel {
   font-family: 'Press Start 2P', monospace;
   font-size: 8px;
-  color: var(--color-text-muted);
+  color: #b5a89d;
 }
 
 .attackType {
@@ -107,7 +112,7 @@
 
 .attackDesc {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: #b5a89d;
   flex: 1;
   text-overflow: ellipsis;
   overflow: hidden;

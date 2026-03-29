@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { haptics } from '@/utils/haptics'
+import { useTranslation } from '@/i18n'
 import type { QTETier } from '@/types'
 import styles from './QTEBar.module.css'
 
@@ -8,48 +9,46 @@ interface QTEBarProps {
   onResult: (tier: QTETier) => void
 }
 
-// Zone boundaries (0..1 of bar width)
 const ZONES = {
-  mega_crit: { start: 0.45, end: 0.55 },   // center 10% — gold
-  crit:      { start: 0.35, end: 0.65 },   // center 30% — green
-  hit:       { start: 0.2,  end: 0.8  },   // center 60% — yellow
-  // rest = miss — red
+  mega_crit: { start: 0.45, end: 0.55 },
+  crit: { start: 0.35, end: 0.65 },
+  hit: { start: 0.2, end: 0.8 },
 }
 
-const SPEED = 0.0013       // fraction per ms (замедлено для играбельности)
-const ANIM_DURATION = 3500 // ms before auto-miss
+const SPEED = 0.0013
+const ANIM_DURATION = 3500
 
 export default function QTEBar({ active, onResult }: QTEBarProps) {
-  const [markerPos, setMarkerPos] = useState(0)   // 0..1
+  const [markerPos, setMarkerPos] = useState(0)
   const [resolved, setResolved] = useState(false)
   const [flash, setFlash] = useState<QTETier | null>(null)
+  const { t } = useTranslation()
 
   const dirRef = useRef(1)
   const posRef = useRef(0)
   const rafRef = useRef<number>(0)
   const lastTimeRef = useRef<number>(0)
 
-  const resolve = useCallback(
-    (pos: number) => {
-      if (resolved) return
-      setResolved(true)
-      cancelAnimationFrame(rafRef.current)
+  const resolve = useCallback((pos: number) => {
+    if (resolved) {
+      return
+    }
 
-      let tier: QTETier = 'miss'
-      if (pos >= ZONES.mega_crit.start && pos <= ZONES.mega_crit.end) tier = 'mega_crit'
-      else if (pos >= ZONES.crit.start && pos <= ZONES.crit.end) tier = 'crit'
-      else if (pos >= ZONES.hit.start && pos <= ZONES.hit.end) tier = 'hit'
+    setResolved(true)
+    cancelAnimationFrame(rafRef.current)
 
-      if (tier === 'miss') haptics.notifyError()
-      else haptics.impactHeavy()
+    let tier: QTETier = 'miss'
+    if (pos >= ZONES.mega_crit.start && pos <= ZONES.mega_crit.end) tier = 'mega_crit'
+    else if (pos >= ZONES.crit.start && pos <= ZONES.crit.end) tier = 'crit'
+    else if (pos >= ZONES.hit.start && pos <= ZONES.hit.end) tier = 'hit'
 
-      setFlash(tier)
-      setTimeout(() => onResult(tier), 300)
-    },
-    [resolved, onResult]
-  )
+    if (tier === 'miss') haptics.notifyError()
+    else haptics.impactHeavy()
 
-  // Start animation when active
+    setFlash(tier)
+    setTimeout(() => onResult(tier), 300)
+  }, [onResult, resolved])
+
   useEffect(() => {
     if (!active) {
       setResolved(false)
@@ -62,12 +61,18 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
     lastTimeRef.current = performance.now()
 
     function tick(time: number) {
-      const dt = time - lastTimeRef.current
+      const delta = time - lastTimeRef.current
       lastTimeRef.current = time
 
-      posRef.current += SPEED * dt * dirRef.current
-      if (posRef.current >= 1) { posRef.current = 1; dirRef.current = -1 }
-      if (posRef.current <= 0) { posRef.current = 0; dirRef.current = 1 }
+      posRef.current += SPEED * delta * dirRef.current
+      if (posRef.current >= 1) {
+        posRef.current = 1
+        dirRef.current = -1
+      }
+      if (posRef.current <= 0) {
+        posRef.current = 0
+        dirRef.current = 1
+      }
 
       setMarkerPos(posRef.current)
       rafRef.current = requestAnimationFrame(tick)
@@ -75,7 +80,6 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
 
     rafRef.current = requestAnimationFrame(tick)
 
-    // Auto-miss after ANIM_DURATION
     const timeout = setTimeout(() => resolve(posRef.current), ANIM_DURATION)
     return () => {
       cancelAnimationFrame(rafRef.current)
@@ -83,23 +87,27 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
     }
   }, [active, resolve])
 
-  function handleTap(e: React.SyntheticEvent) {
-    e.preventDefault()
-    if (!active || resolved) return
+  function handleTap(event: React.SyntheticEvent) {
+    event.preventDefault()
+    if (!active || resolved) {
+      return
+    }
+
     resolve(posRef.current)
   }
 
-  const FLASH_COLOR: Record<QTETier, string> = {
+  const flashColor: Record<QTETier, string> = {
     miss: '#e05252',
     hit: '#c8a96e',
     crit: '#4caf6e',
     mega_crit: '#f0d090',
   }
-  const FLASH_LABEL: Record<QTETier, string> = {
-    miss: 'MISS',
-    hit: 'HIT ×1.5',
-    crit: 'CRIT ×2',
-    mega_crit: '★ MEGA ×3',
+
+  const flashLabel: Record<QTETier, string> = {
+    miss: t('qte_label_miss'),
+    hit: t('qte_label_hit'),
+    crit: t('qte_label_crit'),
+    mega_crit: t('qte_label_mega_crit'),
   }
 
   return (
@@ -108,34 +116,34 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
       onTouchStart={handleTap}
       onMouseDown={handleTap}
       role="button"
-      aria-label="QTE timing bar — tap at the right moment"
+      aria-label={t('tap_qte')}
     >
-      {/* Zone highlights */}
       <div className={styles.bar}>
-        <div className={styles.zoneHit}
-          style={{ left: `${ZONES.hit.start * 100}%`, width: `${(ZONES.hit.end - ZONES.hit.start) * 100}%` }} />
-        <div className={styles.zoneCrit}
-          style={{ left: `${ZONES.crit.start * 100}%`, width: `${(ZONES.crit.end - ZONES.crit.start) * 100}%` }} />
-        <div className={styles.zoneMega}
-          style={{ left: `${ZONES.mega_crit.start * 100}%`, width: `${(ZONES.mega_crit.end - ZONES.mega_crit.start) * 100}%` }} />
+        <div
+          className={styles.zoneHit}
+          style={{ left: `${ZONES.hit.start * 100}%`, width: `${(ZONES.hit.end - ZONES.hit.start) * 100}%` }}
+        />
+        <div
+          className={styles.zoneCrit}
+          style={{ left: `${ZONES.crit.start * 100}%`, width: `${(ZONES.crit.end - ZONES.crit.start) * 100}%` }}
+        />
+        <div
+          className={styles.zoneMega}
+          style={{ left: `${ZONES.mega_crit.start * 100}%`, width: `${(ZONES.mega_crit.end - ZONES.mega_crit.start) * 100}%` }}
+        />
 
-        {/* Moving marker */}
         {!flash && (
-          <div
-            className={styles.marker}
-            style={{ left: `${markerPos * 100}%` }}
-          />
+          <div className={styles.marker} style={{ left: `${markerPos * 100}%` }} />
         )}
       </div>
 
-      {/* Label */}
       {flash ? (
-        <div className={styles.flashLabel} style={{ color: FLASH_COLOR[flash] }}>
-          {FLASH_LABEL[flash]}
+        <div className={styles.flashLabel} style={{ color: flashColor[flash] }}>
+          {flashLabel[flash]}
         </div>
       ) : (
         <div className={styles.hint}>
-          {active ? '▶ TAP!' : 'SPIN to start'}
+          {active ? t('qte_tap_hint') : t('qte_wait_hint')}
         </div>
       )}
     </div>

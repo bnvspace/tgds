@@ -69,6 +69,7 @@ export interface SlotReelHandle {
 interface SlotReelProps {
   symbolPool: GameSymbol[]
   initialSymbol?: GameSymbol
+  labelVersion?: string
 }
 
 const TYPE_COLOR: Record<string, string> = {
@@ -79,7 +80,7 @@ const TYPE_COLOR: Record<string, string> = {
 }
 
 const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
-  ({ symbolPool, initialSymbol }, ref) => {
+  ({ symbolPool, initialSymbol, labelVersion }, ref) => {
     const stripRef = useRef<HTMLDivElement>(null)
     const loopBaseRef = useRef<GameSymbol[]>([])
     const loopSymbolsRef = useRef<GameSymbol[]>([])
@@ -89,20 +90,6 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
     const lastBoundaryRef = useRef(0)
     const spinningRef = useRef(false)
     const rafRef = useRef<number | null>(null)
-
-    useEffect(() => {
-      if (!stripRef.current || symbolPool.length === 0) return
-
-      const initial = initialSymbol ?? symbolPool[0]
-      renderStrip([symbolPool[symbolPool.length - 1], initial, symbolPool[0]])
-      applyTranslate(finalTranslate(1))
-
-      return () => {
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current)
-        }
-      }
-    }, [initialSymbol?.id, symbolPool.length])
 
     function renderStrip(symbols: GameSymbol[]) {
       if (!stripRef.current) return
@@ -124,6 +111,26 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
       if (!stripRef.current) return
       stripRef.current.style.transform = `translateY(${y}px)`
     }
+
+    useEffect(() => {
+      if (!stripRef.current || symbolPool.length === 0) return
+
+      const initial = initialSymbol ?? symbolPool[0]
+      renderStrip([symbolPool[symbolPool.length - 1], initial, symbolPool[0]])
+      applyTranslate(finalTranslate(1))
+
+      return () => {
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current)
+        }
+      }
+    }, [
+      initialSymbol?.id,
+      initialSymbol?.name,
+      labelVersion,
+      symbolPool.length,
+      symbolPool.map((symbol) => symbol.name).join('|'),
+    ])
 
     function runLoop(now: number) {
       if (!spinningRef.current || loopBaseRef.current.length === 0) return

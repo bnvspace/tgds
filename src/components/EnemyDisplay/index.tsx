@@ -1,4 +1,5 @@
 import type { Enemy } from '@/types'
+import { useTranslation } from '@/i18n'
 import styles from './EnemyDisplay.module.css'
 
 interface EnemyDisplayProps {
@@ -8,48 +9,43 @@ interface EnemyDisplayProps {
 export default function EnemyDisplay({ enemy }: EnemyDisplayProps) {
   const currentPattern = enemy.attackPattern[enemy.patternIndex]
   const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100)
-
-  const attackTypeLabel: Record<string, string> = {
-    physical: '⚔ Physical',
-    magical: '✨ Magical',
-    debuff: '☠ Debuff',
-  }
+  const {
+    t,
+    localizeAttackDescription,
+    localizeAttackType,
+    localizeEnemyName,
+  } = useTranslation()
 
   return (
     <div className={styles.wrap}>
-      {/* Enemy viewport */}
-      <div className={styles.viewport}>
+      <div className={`${styles.viewport} ${enemy.isBoss ? styles.bossViewport : ''}`}>
         <span className={styles.icon}>{enemy.icon}</span>
         {enemy.statusEffects.length > 0 && (
           <div className={styles.statusBadges}>
-            {enemy.statusEffects.map((e, i) => (
-              <span key={i} className={styles.badge} data-type={e.type}>
-                {e.type === 'poison' ? '☠' : e.type === 'freeze' ? '❄' : '🔥'}
-                {e.duration}
+            {enemy.statusEffects.map((statusEffect, index) => (
+              <span key={index} className={styles.badge} data-type={statusEffect.type}>
+                {statusEffect.type === 'poison' ? '☠' : statusEffect.type === 'freeze' ? '❄' : '🔥'}
+                {statusEffect.duration}
               </span>
             ))}
           </div>
         )}
       </div>
 
-      {/* HP bar */}
       <div className={styles.hpRow}>
-        <span className={styles.hpLabel}>{enemy.name}</span>
+        <span className={styles.hpLabel}>{localizeEnemyName(enemy)}</span>
         <span className={styles.hpValues}>{enemy.hp}/{enemy.maxHp}</span>
       </div>
       <div className={styles.hpBar}>
         <div className={styles.hpFill} style={{ width: `${hpPercent}%` }} />
       </div>
 
-      {/* Next attack (telegraphed) */}
       {currentPattern && (
         <div className={styles.nextAttack}>
-          <span className={styles.nextLabel}>NEXT:</span>
-          <span className={styles.attackType}>
-            {attackTypeLabel[currentPattern.type]}
-          </span>
+          <span className={styles.nextLabel}>{t('next_attack')}</span>
+          <span className={styles.attackType}>{localizeAttackType(currentPattern.type)}</span>
           <span className={styles.attackDmg}>-{currentPattern.damage}</span>
-          <span className={styles.attackDesc}>{currentPattern.description}</span>
+          <span className={styles.attackDesc}>{localizeAttackDescription(currentPattern.description)}</span>
         </div>
       )}
     </div>

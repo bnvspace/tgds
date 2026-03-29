@@ -2,7 +2,9 @@ import { useGameStore } from '@/store/gameStore'
 
 type Lang = 'en' | 'ru'
 
-export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
+type LocalizedMap = Record<string, Record<Lang, string>>
+
+const TRANSLATIONS: Record<Lang, Record<string, string>> = {
   en: {
     start_run: 'START RUN',
     rebuild_deck: 'REBUILD DECK',
@@ -82,6 +84,25 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     player: 'Player',
     loading: 'Loading',
     not_in_table: 'Finish the map to appear here',
+    spin_button: 'SPIN',
+    stop_button: 'STOP',
+    qte_label_miss: 'MISS',
+    qte_label_hit: 'HIT x1.5',
+    qte_label_crit: 'CRIT x2',
+    qte_label_mega_crit: 'MEGA x3',
+    qte_tap_hint: 'TAP!',
+    qte_wait_hint: 'SPIN to start',
+    next_attack: 'NEXT:',
+    attack_type_physical: '⚔ Physical',
+    attack_type_magical: '✨ Magical',
+    attack_type_debuff: '☠ Debuff',
+    armor_short: 'ARM',
+    tokens_short: 'TOK',
+    damage_short: 'DMG',
+    heal_short: 'HEAL',
+    enemy_attack: 'Enemy attack',
+    no_effect: '—',
+    physical_damage: 'damage',
   },
   ru: {
     start_run: 'В ПУТЬ',
@@ -90,9 +111,9 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     upgrade: 'УЛУЧШИТЬ',
     meta_title: "G I F T ' S   &   D A G G E R S",
     app_title: "Gift's & Daggers",
-    meta_subtitle: 'Опасный спин ждет...',
+    meta_subtitle: 'Опасный спин ждёт...',
     choose_symbols: 'Выберите символы',
-    selected_desc: 'Они заполнят ваши пустые барабаны',
+    selected_desc: 'Они заполнят ваши барабаны',
     confirm: 'ПОДТВЕРДИТЬ',
     shop_title: 'ТОРГОВЕЦ',
     buy_tab: 'КУПИТЬ',
@@ -106,8 +127,8 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     dmg: 'урон',
     magic: 'магия',
     armor: 'броня',
-    tokens: 'монет',
-    heal: 'хил',
+    tokens: 'монеты',
+    heal: 'лечение',
     boss: 'БОСС',
     settings: 'НАСТРОЙКИ',
     sound: 'ЗВУК',
@@ -117,22 +138,22 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     english: 'ENGLISH',
     russian: 'РУССКИЙ',
     language: 'ЯЗЫК',
-    close: '\u0417\u0410\u041a\u0420\u042b\u0422\u042c',
-    back: '\u041d\u0410\u0417\u0410\u0414',
+    close: 'ЗАКРЫТЬ',
+    back: 'НАЗАД',
     shop_heal: 'Лечение',
     added: 'Куплено',
     continue: 'ДАЛЕЕ',
-    reel: 'Слот',
+    reel: 'Барабан',
     remove_symbol: 'Убрать',
     modifiers_title: 'Модификаторы',
-    reset_all: 'Сбросить все',
+    reset_all: 'Сбросить всё',
     max_label: 'макс',
     mod_health_name: 'Ядро жизни',
     mod_health_desc: '+20 ОЗ за ранг',
     mod_str_name: 'Сила',
     mod_str_desc: '+20% физ. урона за ранг',
     mod_reel_name: 'Слот барабана',
-    mod_reel_desc: '+1 \u0431\u0430\u0440\u0430\u0431\u0430\u043d (\u0434\u043e 6)',
+    mod_reel_desc: '+1 барабан (до 6)',
     mod_token_name: 'Сборщик монет',
     mod_token_desc: '+2 монеты за каждый символ монеты',
     world_map_title: 'Карта мира',
@@ -148,7 +169,7 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     hp_label: 'ОЗ',
     travel: 'В ПУТЬ',
     flee: 'ПОБЕГ',
-    flee_warning: 'Забег считается поражением.',
+    flee_warning: 'Забег будет проигран.',
     cancel: 'ОТМЕНА',
     score_label: 'Очки',
     record_label: 'Рекорд',
@@ -156,21 +177,166 @@ export const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     end_of_game: 'КОНЕЦ ИГРЫ',
     active_symbols: 'АКТИВНЫЕ СИМВОЛЫ',
     upgrade_shop: 'МАГАЗИН',
-    leaderboard: 'ЛИДЕРБОРД',
+    leaderboard: 'ТАБЛИЦА ЛИДЕРОВ',
     your_rank: 'Ваш ранг',
     no_data: 'Пока нет игроков. Будьте первым!',
     player: 'Игрок',
     loading: 'Загрузка',
     not_in_table: 'Пройдите карту, чтобы попасть сюда',
+    spin_button: 'КРУТИТЬ',
+    stop_button: 'СТОП',
+    qte_label_miss: 'ПРОМАХ',
+    qte_label_hit: 'ПОПАДАНИЕ x1.5',
+    qte_label_crit: 'КРИТ x2',
+    qte_label_mega_crit: 'МЕГА x3',
+    qte_tap_hint: 'ЖМИ!',
+    qte_wait_hint: 'КРУТИТЕ ДЛЯ СТАРТА',
+    next_attack: 'ДАЛЕЕ:',
+    attack_type_physical: '⚔ Физический',
+    attack_type_magical: '✨ Магический',
+    attack_type_debuff: '☠ Ослабление',
+    armor_short: 'БРН',
+    tokens_short: 'МОН',
+    damage_short: 'УРН',
+    heal_short: 'ЛЕЧ',
+    enemy_attack: 'Атака врага',
+    no_effect: '—',
+    physical_damage: 'урона',
   },
 }
 
-export function useTranslation() {
-  const lang = useGameStore((s) => s.meta.language) || 'en'
+const SYMBOL_NAMES: LocalizedMap = {
+  dagger: { en: 'Dagger', ru: 'Кинжал' },
+  shield: { en: 'Shield', ru: 'Щит' },
+  coin: { en: 'Coin', ru: 'Монета' },
+  energizer: { en: 'Energizer', ru: 'Разрядник' },
+  bomb: { en: 'Bomb', ru: 'Бомба' },
+  diamond: { en: 'Diamond', ru: 'Алмаз' },
+  poison_vial: { en: 'Poison Vial', ru: 'Яд' },
+  magic_scroll: { en: 'Magic Scroll', ru: 'Свиток магии' },
+  health_potion: { en: 'Health Potion', ru: 'Зелье лечения' },
+}
 
-  function t(key: string): string {
-    return TRANSLATIONS[lang][key] || key
+const ENEMY_NAMES: LocalizedMap = {
+  bog_slime: { en: 'Bog Slime', ru: 'Болотный слизень' },
+  swamp_witch: { en: 'Swamp Witch', ru: 'Болотная ведьма' },
+  vine_horror: { en: 'Vine Horror', ru: 'Лозовый ужас' },
+  hammer_goblin: { en: 'Hammer Goblin', ru: 'Гоблин с молотом' },
+  sewer_rat_king: { en: 'Rat King', ru: 'Король крыс' },
+  iron_golem: { en: 'Iron Golem', ru: 'Железный голем' },
+  shadow_knight: { en: 'Shadow Knight', ru: 'Теневой рыцарь' },
+  lich: { en: 'Lich', ru: 'Лич' },
+  dark_overlord: { en: 'Dark Overlord', ru: 'Тёмный владыка' },
+}
+
+const ATTACK_DESCRIPTIONS: LocalizedMap = {
+  'Acid splash': { en: 'Acid splash', ru: 'Кислотный всплеск' },
+  'Poison coat': { en: 'Poison coat', ru: 'Ядовитая плёнка' },
+  'Corrosive vomit': { en: 'Corrosive vomit', ru: 'Разъедающая рвота' },
+  'Hex bolt': { en: 'Hex bolt', ru: 'Сглаз' },
+  'Staff jab': { en: 'Staff jab', ru: 'Удар посохом' },
+  'Poison nova': { en: 'Poison nova', ru: 'Ядовитая нова' },
+  'Curse — weaken': { en: 'Curse — weaken', ru: 'Проклятие — слабость' },
+  'Vine whip': { en: 'Vine whip', ru: 'Удар лозой' },
+  'Thorn strike': { en: 'Thorn strike', ru: 'Шипастый выпад' },
+  'Root — stagger': { en: 'Root — stagger', ru: 'Корни — пошатнуть' },
+  Crush: { en: 'Crush', ru: 'Сокрушение' },
+  'Spore burst': { en: 'Spore burst', ru: 'Выброс спор' },
+  'Hammer swing': { en: 'Hammer swing', ru: 'Удар молотом' },
+  'Quick jab': { en: 'Quick jab', ru: 'Быстрый выпад' },
+  'Poison spit': { en: 'Poison spit', ru: 'Ядовитый плевок' },
+  'Ground smash': { en: 'Ground smash', ru: 'Удар о землю' },
+  'Bite frenzy': { en: 'Bite frenzy', ru: 'Яростные укусы' },
+  'Disease — drain': { en: 'Disease — drain', ru: 'Болезнь — истощение' },
+  'Swarm rush': { en: 'Swarm rush', ru: 'Натиск стаи' },
+  Slam: { en: 'Slam', ru: 'Сокрушающий удар' },
+  Shockwave: { en: 'Shockwave', ru: 'Ударная волна' },
+  'Block Reel 1': { en: 'Block Reel 1', ru: 'Блокировка барабана 1' },
+  'Overcharge crush': { en: 'Overcharge crush', ru: 'Перегруженное сокрушение' },
+  'Electric surge': { en: 'Electric surge', ru: 'Электрический всплеск' },
+  'Dark slash': { en: 'Dark slash', ru: 'Тёмный разрез' },
+  'Soul drain': { en: 'Soul drain', ru: 'Поглощение души' },
+  'Shadow lunge': { en: 'Shadow lunge', ru: 'Теневой выпад' },
+  'Darkness — blind': { en: 'Darkness — blind', ru: 'Тьма — ослепление' },
+  'Frost bolt': { en: 'Frost bolt', ru: 'Ледяной болт' },
+  'Freeze — miss auto': { en: 'Freeze — miss auto', ru: 'Заморозка — авто-промах' },
+  'Death coil': { en: 'Death coil', ru: 'Кольцо смерти' },
+  'Bone shard': { en: 'Bone shard', ru: 'Костяной осколок' },
+  'Void strike': { en: 'Void strike', ru: 'Удар пустоты' },
+  'Soul burst': { en: 'Soul burst', ru: 'Всплеск души' },
+  'Block 2 reels': { en: 'Block 2 reels', ru: 'Блокировка 2 барабанов' },
+  Apocalypse: { en: 'Apocalypse', ru: 'Апокалипсис' },
+  'Throne crush': { en: 'Throne crush', ru: 'Тронное сокрушение' },
+  'Dark shroud': { en: 'Dark shroud', ru: 'Тёмный покров' },
+}
+
+const SYNERGY_NAMES: LocalizedMap = {
+  bomb_diamond: { en: 'Explosion Boost', ru: 'Взрывной импульс' },
+  triple_coin: { en: 'Economy Chain', ru: 'Цепь монет' },
+  double_shield: { en: 'Reinforce', ru: 'Укрепление' },
+  weapon_diamond: { en: 'Diamond Edge', ru: 'Алмазное лезвие' },
+  assassin: { en: 'Assassin', ru: 'Ассасин' },
+  mercenary: { en: 'Mercenary', ru: 'Наёмник' },
+  battlemage: { en: 'Battlemage', ru: 'Боевой маг' },
+}
+
+function lookupLocalizedValue(
+  lang: Lang,
+  table: LocalizedMap,
+  key: string,
+  fallback: string,
+) {
+  return table[key]?.[lang] ?? fallback
+}
+
+function splitTierSuffix(name: string) {
+  const match = name.match(/\s\+\d+$/)
+
+  if (!match) {
+    return { baseName: name, suffix: '' }
   }
 
-  return { t, lang }
+  return {
+    baseName: name.slice(0, -match[0].length),
+    suffix: match[0],
+  }
+}
+
+export function useTranslation() {
+  const lang = useGameStore((state) => state.meta.language) || 'en'
+
+  function t(key: string): string {
+    return TRANSLATIONS[lang][key] ?? key
+  }
+
+  function localizeSymbolName(symbol: { id: string; name: string }) {
+    return lookupLocalizedValue(lang, SYMBOL_NAMES, symbol.id, symbol.name)
+  }
+
+  function localizeEnemyName(enemy: { id: string; name: string }) {
+    const { baseName, suffix } = splitTierSuffix(enemy.name)
+    return `${lookupLocalizedValue(lang, ENEMY_NAMES, enemy.id, baseName)}${suffix}`
+  }
+
+  function localizeAttackDescription(description: string) {
+    return lookupLocalizedValue(lang, ATTACK_DESCRIPTIONS, description, description)
+  }
+
+  function localizeSynergyName(synergy: { id: string; name: string }) {
+    return lookupLocalizedValue(lang, SYNERGY_NAMES, synergy.id, synergy.name)
+  }
+
+  function localizeAttackType(type: 'physical' | 'magical' | 'debuff') {
+    return t(`attack_type_${type}`)
+  }
+
+  return {
+    t,
+    lang,
+    localizeSymbolName,
+    localizeEnemyName,
+    localizeAttackDescription,
+    localizeSynergyName,
+    localizeAttackType,
+  }
 }

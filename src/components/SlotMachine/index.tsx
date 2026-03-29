@@ -1,8 +1,9 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useImperativeHandle, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import type { GameSymbol } from '@/types'
 import type { SlotReelHandle } from '@/components/SlotReel'
 import SlotReel from '@/components/SlotReel'
+import { useTranslation } from '@/i18n'
 import styles from './SlotMachine.module.css'
 
 interface SlotMachineProps {
@@ -23,11 +24,56 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
     const spinPromiseRef = useRef<Promise<void> | null>(null)
     const resolveSpinRef = useRef<(() => void) | null>(null)
     const activeSpinRef = useRef(false)
-    const stopLockedRef = useRef(false)
+    const stopInFlightRef = useRef(false)
+    const queuedStopsRef = useRef(0)
     const nextStopIndexRef = useRef(0)
     const totalReelsRef = useRef(reels.length)
-    const [nextStopIndex, setNextStopIndex] = useState(0)
-    const [stopLocked, setStopLocked] = useState(false)
+    const { lang, localizeSymbolName, t } = useTranslation()
+
+    function localizeSymbol(symbol: GameSymbol): GameSymbol {
+      return {
+        ...symbol,
+        name: localizeSymbolName(symbol),
+      }
+    }
+
+    function resolveSpinIfFinished(nextIndex: number) {
+      if (nextIndex >= totalReelsRef.current) {
+        queuedStopsRef.current = 0
+        resolveSpinRef.current?.()
+      }
+    }
+
+    function stopCurrentReel() {
+      if (!activeSpinRef.current || stopInFlightRef.current) {
+        return
+      }
+
+      const reelIndex = nextStopIndexRef.current
+      const reelRef = reelRefs.current[reelIndex]
+
+      if (!reelRef) {
+        return
+      }
+
+      stopInFlightRef.current = true
+
+      void reelRef.stop().then(() => {
+        const nextIndex = reelIndex + 1
+        nextStopIndexRef.current = nextIndex
+        stopInFlightRef.current = false
+
+        if (nextIndex >= totalReelsRef.current) {
+          resolveSpinIfFinished(nextIndex)
+          return
+        }
+
+        if (queuedStopsRef.current > 0) {
+          queuedStopsRef.current -= 1
+          stopCurrentReel()
+        }
+      })
+    }
 
     useImperativeHandle(ref, () => ({
       spinTo: async (results: GameSymbol[]) => {
@@ -36,24 +82,22 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
         }
 
         activeSpinRef.current = true
-        stopLockedRef.current = false
+        stopInFlightRef.current = false
+        queuedStopsRef.current = 0
         totalReelsRef.current = results.length
         nextStopIndexRef.current = 0
-        setNextStopIndex(0)
-        setStopLocked(false)
 
         results.forEach((result, index) => {
-          reelRefs.current[index]?.startSpin(result)
+          reelRefs.current[index]?.startSpin(localizeSymbol(result))
         })
 
         spinPromiseRef.current = new Promise<void>((resolve) => {
           resolveSpinRef.current = () => {
             activeSpinRef.current = false
-            stopLockedRef.current = false
+            stopInFlightRef.current = false
+            queuedStopsRef.current = 0
             spinPromiseRef.current = null
             resolveSpinRef.current = null
-            setNextStopIndex(totalReelsRef.current)
-            setStopLocked(false)
             resolve()
           }
         })
@@ -62,36 +106,22 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
       },
 
       stopNextReel: () => {
-        if (!activeSpinRef.current || stopLockedRef.current) return
+        if (!activeSpinRef.current) {
+          return
+        }
 
-        const reelIndex = nextStopIndexRef.current
-        const reelRef = reelRefs.current[reelIndex]
-        if (!reelRef) return
+        if (stopInFlightRef.current) {
+          const maxQueuedStops = Math.max(0, totalReelsRef.current - nextStopIndexRef.current - 1)
+          queuedStopsRef.current = Math.min(maxQueuedStops, queuedStopsRef.current + 1)
+          return
+        }
 
-        stopLockedRef.current = true
-        setStopLocked(true)
-
-        void reelRef.stop().then(() => {
-          const nextIndex = reelIndex + 1
-          nextStopIndexRef.current = nextIndex
-          setNextStopIndex(nextIndex)
-          stopLockedRef.current = false
-          setStopLocked(false)
-
-          if (nextIndex >= totalReelsRef.current) {
-            resolveSpinRef.current?.()
-          }
-        })
+        stopCurrentReel()
       },
     }))
 
-    const buttonLabel = isSpinning
-      ? nextStopIndex >= reels.length
-        ? '...'
-        : `STOP ${nextStopIndex + 1}`
-      : 'SPIN'
-
-    const buttonDisabled = isSpinning ? stopLocked : disabled
+    const buttonLabel = isSpinning ? t('stop_button') : t('spin_button')
+    const buttonDisabled = isSpinning ? false : disabled
     const reelWidth = reels.length >= 6 ? 48 : reels.length === 5 ? 56 : reels.length === 4 ? 64 : 72
     const reelGap = reels.length >= 6 ? 4 : reels.length === 5 ? 5 : 6
     const reelRowStyle = {
@@ -102,16 +132,21 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
     return (
       <div className={styles.wrap}>
         <div className={styles.reelsRow} style={reelRowStyle}>
-          {reels.map((reel, index) => (
-            <SlotReel
-              key={index}
-              ref={(element) => {
-                reelRefs.current[index] = element
-              }}
-              symbolPool={reel.symbolPool.map((weightedSymbol) => weightedSymbol.symbol)}
-              initialSymbol={reel.symbolPool[0]?.symbol}
-            />
-          ))}
+          {reels.map((reel, index) => {
+            const localizedPool = reel.symbolPool.map((weightedSymbol) => localizeSymbol(weightedSymbol.symbol))
+
+            return (
+              <SlotReel
+                key={index}
+                ref={(element) => {
+                  reelRefs.current[index] = element
+                }}
+                labelVersion={lang}
+                symbolPool={localizedPool}
+                initialSymbol={localizedPool[0]}
+              />
+            )
+          })}
         </div>
 
         <button

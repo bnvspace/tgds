@@ -5,12 +5,8 @@ import { useGameStore } from '@/store/gameStore'
 import { useTranslation } from '@/i18n'
 import type { GameSymbol } from '@/types'
 import styles from './ShopScreen.module.css'
-
-const RARITY_COLOR: Record<string, string> = {
-  common: '#888',
-  rare: '#4a90d9',
-  epic: '#9b72cf',
-}
+import { playButtonSFX, playCoinSFX } from '@/utils/audio'
+import { haptics } from '@/utils/haptics'
 
 const SYMBOL_COST: Record<string, number> = {
   common: 10,
@@ -19,56 +15,71 @@ const SYMBOL_COST: Record<string, number> = {
 }
 
 export default function ShopScreen() {
-  const player = useGameStore((s) => s.player)
-  const meta = useGameStore((s) => s.meta)
-  const addSymbolToReel = useGameStore((s) => s.addSymbolToReel)
-  const removeSymbolFromReel = useGameStore((s) => s.removeSymbolFromReel)
-  const setPlayer = useGameStore((s) => s.setPlayer)
-  const setPhase = useGameStore((s) => s.setPhase)
-  const { t } = useTranslation()
-
-  const EFFECT_DESC = (sym: GameSymbol) => {
-    const e = sym.effect
-    const parts = []
-    if (e.damage) parts.push(`⚔ ${e.damage * sym.level} ${t('dmg')}`)
-    if (e.magicDamage) parts.push(`✨ ${e.magicDamage * sym.level} ${t('magic')}`)
-    if (e.armor) parts.push(`🛡 +${e.armor * sym.level} ${t('armor')}`)
-    if (e.tokens) parts.push(`🪙 +${e.tokens * sym.level} ${t('tokens')}`)
-    if (e.heal) parts.push(`❤ +${e.heal * sym.level} ${t('heal')}`)
-    return parts.join(' ') || '—'
-  }
+  const player = useGameStore((state) => state.player)
+  const meta = useGameStore((state) => state.meta)
+  const addSymbolToReel = useGameStore((state) => state.addSymbolToReel)
+  const removeSymbolFromReel = useGameStore((state) => state.removeSymbolFromReel)
+  const setPlayer = useGameStore((state) => state.setPlayer)
+  const setPhase = useGameStore((state) => state.setPhase)
+  const { t, localizeSymbolName } = useTranslation()
 
   const [tab, setTab] = useState<'buy' | 'remove'>('buy')
   const [boughtIds, setBoughtIds] = useState<Set<string>>(new Set())
 
-  // Unlocked symbols available in shop (pick 4 random from unlocked pool)
   const shopSymbols = ALL_SYMBOLS
-    .filter((s) => meta.unlockedSymbolIds.includes(s.id))
+    .filter((symbol) => meta.unlockedSymbolIds.includes(symbol.id))
     .slice(0, 4)
 
-  function buySymbol(sym: GameSymbol) {
-    if (!player) return
-    const cost = SYMBOL_COST[sym.rarity]
-    if (player.tokens < cost) return
-    if (boughtIds.has(sym.id)) return
+  function effectDescription(symbol: GameSymbol) {
+    const { effect } = symbol
+    const parts = []
 
-    // Add to reel with fewest symbols (deck-thinning logic reversed: add to least-loaded)
-    const minReelIdx = player.reels.reduce((minIdx, r, i, arr) =>
-      r.symbolPool.length < arr[minIdx].symbolPool.length ? i : minIdx, 0)
+    if (effect.damage) parts.push(`⚔ ${effect.damage * symbol.level} ${t('dmg')}`)
+    if (effect.magicDamage) parts.push(`✨ ${effect.magicDamage * symbol.level} ${t('magic')}`)
+    if (effect.armor) parts.push(`🛡 +${effect.armor * symbol.level} ${t('armor')}`)
+    if (effect.tokens) parts.push(`🪙 +${effect.tokens * symbol.level} ${t('tokens')}`)
+    if (effect.heal) parts.push(`❤ +${effect.heal * symbol.level} ${t('heal')}`)
 
-    addSymbolToReel(sym, minReelIdx)
+    return parts.join(' ') || t('no_effect')
+  }
+
+  function buySymbol(symbol: GameSymbol) {
+    if (!player) {
+      return
+    }
+
+    const cost = SYMBOL_COST[symbol.rarity]
+    if (player.tokens < cost || boughtIds.has(symbol.id)) {
+      return
+    }
+
+    const targetReelIndex = player.reels.reduce((minIndex, reel, index, reels) => (
+      reel.symbolPool.length < reels[minIndex].symbolPool.length ? index : minIndex
+    ), 0)
+
+    addSymbolToReel(symbol, targetReelIndex)
     setPlayer({ ...player, tokens: player.tokens - cost })
-    setBoughtIds((prev) => new Set(prev).add(sym.id))
+    setBoughtIds((previous) => new Set(previous).add(symbol.id))
+    playCoinSFX()
+    haptics.coinPickup()
   }
 
   function removeSymbol(symbolId: string, reelIndex: number) {
     const reel = player?.reels[reelIndex]
-    if (!reel || reel.symbolPool.length <= 1) return // keep at least 1 symbol per reel
+    if (!reel || reel.symbolPool.length <= 1) {
+      return
+    }
+
     removeSymbolFromReel(symbolId, reelIndex)
   }
 
   function heal() {
-    if (!player || player.tokens < 15) return
+    if (!player || player.tokens < 15) {
+      return
+    }
+
+    playButtonSFX()
+    haptics.heal()
     setPlayer({
       ...player,
       hp: Math.min(player.maxHp, player.hp + 25),
@@ -77,6 +88,7 @@ export default function ShopScreen() {
   }
 
   function proceed() {
+    playButtonSFX()
     setPhase('world_map')
   }
 
@@ -87,23 +99,44 @@ export default function ShopScreen() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Header */}
       <div className={styles.header}>
         <h2 className={styles.title}>🏪 {t('shop_title')}</h2>
         <span className={styles.tokens}>🪙 {player?.tokens ?? 0}</span>
       </div>
 
-      {/* Tabs */}
+      <div className={styles.activeSection}>
+        <div className={styles.activeSectionLabel}>{t('active_symbols')}</div>
+        <div className={styles.activeSymbols}>
+          {player?.reels.flatMap((reel) => reel.symbolPool).map((weightedSymbol, index) => (
+            <div
+              key={index}
+              className={styles.activeSymbolSlot}
+              title={localizeSymbolName(weightedSymbol.symbol)}
+            >
+              {weightedSymbol.symbol.icon}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${tab === 'buy' ? styles.tabActive : ''}`}
-          onClick={() => setTab('buy')}
+          onClick={() => {
+            setTab('buy')
+            playButtonSFX()
+            haptics.selectionChange()
+          }}
         >
-          {t('buy_tab')}
+          {t('upgrade_shop')}
         </button>
         <button
           className={`${styles.tab} ${tab === 'remove' ? styles.tabActive : ''}`}
-          onClick={() => setTab('remove')}
+          onClick={() => {
+            setTab('remove')
+            playButtonSFX()
+            haptics.selectionChange()
+          }}
         >
           {t('remove_tab')}
         </button>
@@ -111,34 +144,32 @@ export default function ShopScreen() {
 
       {tab === 'buy' && (
         <div className={styles.shopGrid}>
-          {/* Heal node */}
           <button
             className={`${styles.shopCard} ${styles.healCard}`}
             onClick={heal}
             disabled={!player || player.tokens < 15}
           >
-            <span className={styles.shopIcon}>❤️</span>
+            <span className={styles.shopIcon}>❤</span>
             <span className={styles.shopName}>{t('shop_heal')}</span>
-            <span className={styles.shopEffect}>+25 HP</span>
+            <span className={styles.shopEffect}>+25 {t('hp_label')}</span>
             <span className={styles.shopCost}>🪙 15</span>
           </button>
 
-          {/* Symbol slots */}
-          {shopSymbols.map((sym) => {
-            const cost = SYMBOL_COST[sym.rarity]
+          {shopSymbols.map((symbol) => {
+            const cost = SYMBOL_COST[symbol.rarity]
             const canAfford = (player?.tokens ?? 0) >= cost
-            const bought = boughtIds.has(sym.id)
+            const bought = boughtIds.has(symbol.id)
+
             return (
               <button
-                key={sym.id}
+                key={symbol.id}
                 className={`${styles.shopCard} ${bought ? styles.bought : ''}`}
-                style={{ borderColor: RARITY_COLOR[sym.rarity] }}
-                onClick={() => buySymbol(sym)}
+                onClick={() => buySymbol(symbol)}
                 disabled={!canAfford || bought}
               >
-                <span className={styles.shopIcon}>{sym.icon}</span>
-                <span className={styles.shopName}>{sym.name}</span>
-                <span className={styles.shopEffect}>{EFFECT_DESC(sym)}</span>
+                <span className={styles.shopIcon}>{symbol.icon}</span>
+                <span className={styles.shopName}>{localizeSymbolName(symbol)}</span>
+                <span className={styles.shopEffect}>{effectDescription(symbol)}</span>
                 <span className={styles.shopCost}>
                   {bought ? `✓ ${t('added')}` : `🪙 ${cost}`}
                 </span>
@@ -151,19 +182,19 @@ export default function ShopScreen() {
       {tab === 'remove' && (
         <div className={styles.removeSection}>
           <p className={styles.removeHint}>{t('remove_hint')}</p>
-          {player?.reels.map((reel, ri) => (
-            <div key={ri} className={styles.reelGroup}>
-              <span className={styles.reelLabel}>{t('reel')} {ri + 1}</span>
+          {player?.reels.map((reel, reelIndex) => (
+            <div key={reelIndex} className={styles.reelGroup}>
+              <span className={styles.reelLabel}>{t('reel')} {reelIndex + 1}</span>
               <div className={styles.reelSymbols}>
-                {reel.symbolPool.map((ws, si) => (
+                {reel.symbolPool.map((weightedSymbol, symbolIndex) => (
                   <button
-                    key={`${ws.symbol.id}-${si}`}
+                    key={`${weightedSymbol.symbol.id}-${symbolIndex}`}
                     className={styles.removeBtn}
-                    onClick={() => removeSymbol(ws.symbol.id, ri)}
+                    onClick={() => removeSymbol(weightedSymbol.symbol.id, reelIndex)}
                     disabled={reel.symbolPool.length <= 1}
-                    title={`${t('remove_symbol')} ${ws.symbol.name}`}
+                    title={`${t('remove_symbol')} ${localizeSymbolName(weightedSymbol.symbol)}`}
                   >
-                    {ws.symbol.icon}
+                    {weightedSymbol.symbol.icon}
                     <span className={styles.removeX}>✕</span>
                   </button>
                 ))}

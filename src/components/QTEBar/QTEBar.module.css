@@ -1,8 +1,8 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 8px;
+  gap: 8px;
+  padding: 12px 10px;
   background: #0a0a0f;
   border: 2px solid #2a2a3e;
   cursor: pointer;
@@ -20,10 +20,11 @@
 .bar {
   position: relative;
   width: 100%;
-  height: 16px;
+  height: 72px;
   background: #2a0e0e;
   border: 1px solid #3d1515;
   overflow: hidden;
+  border-radius: 2px;
 }
 
 /* Zone layers */
@@ -64,7 +65,7 @@
 /* Labels */
 .hint {
   font-family: 'Press Start 2P', monospace;
-  font-size: 6px;
+  font-size: 7px;
   color: #3d3d5c;
   text-align: center;
   letter-spacing: 0.05em;
@@ -72,7 +73,7 @@
 
 .flashLabel {
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  font-size: 10px;
   text-align: center;
   letter-spacing: 0.05em;
   animation: flashIn 0.15s steps(2) forwards;

@@ -45,8 +45,14 @@
   box-shadow: 1px 1px 0 #000;
 }
 
-.spinBtn:disabled,
 .spinning {
+  color: #f0d090;
+  background: #2a2a3e;
+  border-color: #f0d090;
+  box-shadow: 3px 3px 0 #000, 0 0 12px rgba(240,208,144,0.45);
+}
+
+.spinBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
