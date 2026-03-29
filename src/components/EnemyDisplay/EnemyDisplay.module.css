@@ -22,13 +22,14 @@
 }
 
 .bossViewport {
-  min-height: 240px;
+  min-height: 320px;
+  padding-block: 28px;
 }
 
 .icon { font-size: 56px; line-height: 1; }
 
 .bossViewport .icon {
-  font-size: 92px;
+  font-size: 124px;
 }
 
 .statusBadges {

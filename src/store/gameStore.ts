@@ -15,7 +15,7 @@ const DEFAULT_META: MetaProgress = {
   isHapticsEnabled: true,
 }
 
-const BOSS_CHIPS_REWARD = 20
+export const BOSS_CHIPS_REWARD = 20
 const MAX_REEL_SLOTS = 6
 
 function buildStarterReels(reelCount: number) {
@@ -153,14 +153,18 @@ export const useGameStore = create<GameStore>()(
     if (won) haptics.notifySuccess()
     else haptics.notifyError()
 
-    const chipsEarned = won ? 30 : 10
-    set((s) => ({
-      meta: { ...s.meta, totalChips: s.meta.totalChips + chipsEarned },
+    set({
       phase: won ? 'run_complete' : 'game_over',
-    }))
+    })
   },
 
-  resetGame: () => set(INITIAL),
+  resetGame: () => {
+    const meta = get().meta
+    set({
+      ...INITIAL,
+      meta: { ...meta },
+    })
+  },
 
   setPlayer: (player) => set({ player }),
 

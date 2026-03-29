@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useGameStore } from '@/store/gameStore'
+import { BOSS_CHIPS_REWARD, useGameStore } from '@/store/gameStore'
 import StartScreen from '@/screens/StartScreen'
 import InitialShopScreen from '@/screens/InitialShop'
 import CombatScreen from '@/screens/CombatScreen'
@@ -126,7 +126,6 @@ export default function App() {
 // ── Game Over Screen ─────────────────────────────────────
 function GameOverScreen() {
   const resetGame = useGameStore((s) => s.resetGame)
-  const addChips = useGameStore((s) => s.addChips)
   const player = useGameStore((s) => s.player)
   const { t } = useTranslation()
   const [visible, setVisible] = useState(false)
@@ -135,12 +134,10 @@ function GameOverScreen() {
     setTimeout(() => setVisible(true), 300)
   }, [])
 
-  const chipsEarned = 10
   const score = (player?.tokens ?? 0) * 100 + (player?.fightsWon ?? 0) * 500
 
   function handleRetry() {
     playButtonSFX()
-    addChips(chipsEarned)
     resetGame()
   }
 
@@ -172,7 +169,7 @@ function GameOverScreen() {
           transition={{ delay: 0.3, duration: 0.4 }}
           style={{ color: '#e05252', fontSize: 20, letterSpacing: 3 }}
         >
-          GAME OVER
+          {t('game_over')}
         </motion.div>
       </div>
 
@@ -187,9 +184,8 @@ function GameOverScreen() {
           boxShadow: '4px 4px 0 #000',
         }}
       >
-        {[
+        {[ 
           { label: t('score_label'), value: score },
-          { label: t('chips_won'), value: `+${chipsEarned}` },
           { label: t('hp_label'), value: `${player?.hp ?? 0}/${player?.maxHp ?? 100}` },
         ].map(({ label, value }) => (
           <div key={label} style={{
@@ -224,11 +220,11 @@ function GameOverScreen() {
 
 function VictoryScreen() {
   const resetGame = useGameStore((s) => s.resetGame)
-  const addChips = useGameStore((s) => s.addChips)
   const setPhase = useGameStore((s) => s.setPhase)
+  const { t } = useTranslation()
 
   function handleModifiers() {
-    addChips(30) // reward for winning
+    playButtonSFX()
     resetGame()
     setPhase('meta_menu')
   }
@@ -240,17 +236,20 @@ function VictoryScreen() {
       fontFamily: "'Press Start 2P', monospace", background: '#0a0a0f',
       flex: 1, // Ensure it fills the flex container
     }}>
-      <h2 style={{ color: '#c8a96e', fontSize: 14, margin: 0 }}>VICTORY!</h2>
+      <h2 style={{ color: '#c8a96e', fontSize: 14, margin: 0 }}>{t('victory')}</h2>
       <p style={{ color: '#3d3d5c', fontSize: 6, textAlign: 'center' }}>
-        +30 chips awarded
+        {t('chips_won')}: +{BOSS_CHIPS_REWARD}
       </p>
-      <button onClick={handleModifiers} style={{
-        fontFamily: "'Press Start 2P', monospace", fontSize: 8,
-        color: '#0a0a0f', background: '#c8a96e', border: '2px solid #c8a96e',
-        padding: '12px 20px', cursor: 'pointer', borderRadius: 0,
-        boxShadow: '3px 3px 0 #000',
-      }}>
-        ▶ PLAY AGAIN
+      <button
+        onClick={handleModifiers}
+        style={{
+          fontFamily: "'Press Start 2P', monospace", fontSize: 8,
+          color: '#0a0a0f', background: '#c8a96e', border: '2px solid #c8a96e',
+          padding: '12px 20px', cursor: 'pointer', borderRadius: 0,
+          boxShadow: '3px 3px 0 #000',
+        }}
+      >
+        {'>'} {t('back_to_menu')}
       </button>
     </div>
   )

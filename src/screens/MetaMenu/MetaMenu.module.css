@@ -9,20 +9,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  gap: 16px;
+  padding: 18px 22px;
   border-bottom: 2px solid #1c1c2e;
   flex-shrink: 0;
 }
 
 .backBtn {
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
+  font-size: clamp(12px, 1.4vw, 18px);
   color: #b5a89d;
   background: #12121e;
   border: 2px solid #3d2b1f;
   cursor: pointer;
-  padding: 10px 12px;
-  box-shadow: 2px 2px 0 #000;
+  padding: 16px 18px;
+  box-shadow: 3px 3px 0 #000;
   white-space: nowrap;
 }
 
@@ -33,15 +34,17 @@
 
 .title {
   font-family: 'Press Start 2P', monospace;
-  font-size: 9px;
+  font-size: clamp(14px, 1.6vw, 20px);
   color: #c8a96e;
   margin: 0;
+  text-align: center;
 }
 
 .chips {
   font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: clamp(12px, 1.4vw, 18px);
   color: #60b8e8;
+  white-space: nowrap;
 }
 
 .list {
@@ -49,24 +52,24 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px;
+  gap: 12px;
+  padding: 18px;
 }
 
 .modCard {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 8px;
+  gap: 18px;
+  padding: 18px 16px;
   background: #12121e;
   border: 2px solid #2a2a3e;
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: 3px 3px 0 #000;
 }
 
 .modIcon {
-  width: 44px;
+  width: clamp(64px, 10vw, 100px);
   font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: clamp(12px, 1.5vw, 18px);
   color: #c8a96e;
   flex-shrink: 0;
   text-align: center;
@@ -76,40 +79,40 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
 }
 
 .modName {
   font-family: 'Press Start 2P', monospace;
-  font-size: 6px;
+  font-size: clamp(12px, 1.35vw, 18px);
   color: #c8a96e;
 }
 
 .modDesc {
   font-family: 'Press Start 2P', monospace;
-  font-size: 4px;
+  font-size: clamp(9px, 1vw, 13px);
   color: #3d3d5c;
-  line-height: 1.6;
+  line-height: 1.9;
 }
 
 .modCost {
   font-family: 'Press Start 2P', monospace;
-  font-size: 4px;
+  font-size: clamp(9px, 1vw, 13px);
   color: #60b8e8;
 }
 
 .modControls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .ctrlBtn {
-  width: 22px;
-  height: 22px;
+  width: clamp(34px, 5vw, 46px);
+  height: clamp(34px, 5vw, 46px);
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
+  font-size: clamp(14px, 1.8vw, 20px);
   color: #c8a96e;
   background: #1c1c2e;
   border: 2px solid #3d2b1f;
@@ -131,16 +134,16 @@
 
 .ctrlCount {
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  font-size: clamp(12px, 1.4vw, 18px);
   color: #c8a96e;
-  min-width: 14px;
+  min-width: 26px;
   text-align: center;
 }
 
 .footer {
   display: flex;
-  gap: 6px;
-  padding: 8px;
+  gap: 12px;
+  padding: 18px;
   border-top: 2px solid #1c1c2e;
   flex-shrink: 0;
 }
@@ -148,31 +151,62 @@
 .refundBtn {
   flex: 1;
   font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: clamp(11px, 1.3vw, 16px);
   color: #c8a96e;
   background: #12121e;
   border: 2px solid #3d2b1f;
-  padding: 10px;
+  padding: 16px 14px;
   cursor: pointer;
   border-radius: 0;
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: 3px 3px 0 #000;
 }
 
 .startBtn {
   flex: 2;
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  font-size: clamp(12px, 1.45vw, 18px);
   color: #0a0a0f;
   background: #c8a96e;
   border: 2px solid #c8a96e;
-  padding: 10px;
+  padding: 16px 14px;
   cursor: pointer;
   border-radius: 0;
-  box-shadow: 2px 2px 0 #000;
+  box-shadow: 3px 3px 0 #000;
 }
 
 .startBtn:hover { background: #f0d090; }
 .startBtn:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0 #000;
+}
+
+@media (max-width: 720px) {
+  .header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .title {
+    order: 3;
+    width: 100%;
+    text-align: left;
+  }
+
+  .modCard {
+    gap: 14px;
+    padding: 16px 14px;
+  }
+
+  .modControls {
+    gap: 8px;
+  }
+
+  .footer {
+    flex-direction: column;
+  }
+
+  .startBtn,
+  .refundBtn {
+    width: 100%;
+  }
 }
