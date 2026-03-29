@@ -13,31 +13,19 @@ import { useTranslation } from '@/i18n'
 import type { GameSymbol, QTETier } from '@/types'
 import styles from './CombatScreen.module.css'
 
-const DEV_ENEMY = {
-  id: 'hammer_goblin',
-  name: 'Hammer Goblin',
-  icon: '\u{1F47A}',
-  zone: 'sewer' as const,
-  hp: 60,
-  maxHp: 60,
-  attackPattern: [
-    { damage: 12, type: 'physical' as const, description: 'Hammer swing' },
-    { damage: 8, type: 'physical' as const, description: 'Quick jab' },
-    { damage: 10, type: 'magical' as const, description: 'Poison spit' },
-  ],
-  patternIndex: 0,
-  statusEffects: [],
-  blockedReels: [],
-  isBoss: false,
-}
-
 type CombatPhase = 'player_idle' | 'spinning' | 'qte_active' | 'resolving' | 'enemy_turn' | 'done'
+
+const ACTIVE_COMBAT_PHASES = new Set([
+  'combat_start',
+  'player_spin',
+  'resolving',
+  'enemy_action',
+  'turn_end',
+])
 
 export default function CombatScreen() {
   const player = useGameStore((state) => state.player)
   const currentEnemy = useGameStore((state) => state.currentEnemy)
-  const setEnemy = useGameStore((state) => state.setEnemy)
-  const resetArmor = useGameStore((state) => state.resetArmor)
   const applySpinResult = useGameStore((state) => state.applySpinResult)
   const applyDamageToEnemy = useGameStore((state) => state.applyDamageToEnemy)
   const damagePlayer = useGameStore((state) => state.damagePlayer)
@@ -62,13 +50,7 @@ export default function CombatScreen() {
   const [combatLog, setCombatLog] = useState<string[]>([t('combat_start')])
   const [showFleeConfirm, setShowFleeConfirm] = useState(false)
 
-  useEffect(() => {
-    if (!currentEnemy) {
-      setEnemy(DEV_ENEMY)
-    }
-  }, [currentEnemy, setEnemy])
-
-  const enemy = currentEnemy ?? DEV_ENEMY
+  const enemy = currentEnemy
   const hpPercent = player ? (player.hp / player.maxHp) * 100 : 0
 
   function log(message: string) {
@@ -78,7 +60,7 @@ export default function CombatScreen() {
   async function performEnemyTurn(encounterToken = encounterTokenRef.current) {
     const liveState = useGameStore.getState()
     const livePlayer = liveState.player
-    const liveEnemy = liveState.currentEnemy ?? enemy
+    const liveEnemy = liveState.currentEnemy
 
     if (!livePlayer || !liveEnemy) return
     if (!hasPlayerActedRef.current) {
@@ -88,11 +70,17 @@ export default function CombatScreen() {
 
     setCombatPhase('enemy_turn')
     await new Promise((resolve) => setTimeout(resolve, 700))
-    if (encounterToken !== encounterTokenRef.current) return
+    const latestState = useGameStore.getState()
+    const activeEnemy = latestState.currentEnemy
+    if (
+      encounterToken !== encounterTokenRef.current ||
+      activeEnemy !== liveEnemy ||
+      !ACTIVE_COMBAT_PHASES.has(latestState.phase)
+    ) return
 
     const pattern = liveEnemy.attackPattern[liveEnemy.patternIndex]
-    const attackType = pattern.type === 'debuff' ? 'physical' : pattern.type
-    const effectiveDamage = attackType === 'magical'
+    const attackType = pattern.type
+    const effectiveDamage = attackType === 'debuff'
       ? pattern.damage
       : Math.max(0, pattern.damage - livePlayer.armor)
 
@@ -116,7 +104,7 @@ export default function CombatScreen() {
   }
 
   useEffect(() => {
-    if (!player) return
+    if (!player || !enemy) return
 
     const encounterId = `${enemy.id}:${enemy.maxHp}`
     if (encounterRef.current === encounterId) return
@@ -125,13 +113,13 @@ export default function CombatScreen() {
     encounterTokenRef.current += 1
     pendingRef.current = []
     hasPlayerActedRef.current = false
-    resetArmor()
+    setShowFleeConfirm(false)
     setCombatLog([t('combat_start')])
     setCombatPhase('player_idle')
-  }, [player, enemy.id, enemy.maxHp, resetArmor, t])
+  }, [player, enemy?.id, enemy?.maxHp, t])
 
   async function resolveSpinOutcome(symbols: GameSymbol[], qteTier: QTETier | null) {
-    if (!player) return
+    if (!player || !enemy) return
 
     pendingRef.current = []
     setCombatPhase('resolving')
@@ -193,7 +181,7 @@ export default function CombatScreen() {
   }
 
   async function handleSpin() {
-    if (!player) return
+    if (!player || !enemy) return
 
     if (combatPhase === 'spinning') {
       slotRef.current?.stopNextReel()
@@ -223,7 +211,7 @@ export default function CombatScreen() {
   }
 
   async function handleQTEResult(tier: QTETier) {
-    if (!player || pendingRef.current.length === 0) return
+    if (!player || !enemy || pendingRef.current.length === 0) return
 
     const symbols = pendingRef.current
     await resolveSpinOutcome(symbols, tier)
@@ -242,6 +230,10 @@ export default function CombatScreen() {
   function cancelFlee() {
     playButtonSFX()
     setShowFleeConfirm(false)
+  }
+
+  if (!player || !enemy) {
+    return <div className={styles.screen} />
   }
 
   return (

@@ -66,7 +66,6 @@ interface GameStore extends GameState {
 
   // ── Player mutations ───────────────────────────────────
   setPlayer: (player: Player) => void
-  resetArmor: () => void          // called at start of PLAYER_SPIN_PHASE
   applySpinResult: (result: SpinResult) => void
 
   // ── Enemy mutations ────────────────────────────────────
@@ -76,7 +75,7 @@ interface GameStore extends GameState {
   recordCombatVictory: (enemy: Enemy) => void
 
   // ── Player mutations ───────────────────────────────────
-  damagePlayer: (amount: number, type: 'physical' | 'magical') => void
+  damagePlayer: (amount: number, type: 'physical' | 'magical' | 'debuff') => void
 
   // ── Spin result ────────────────────────────────────────
   setSpinResult: (result: SpinResult) => void
@@ -168,12 +167,6 @@ export const useGameStore = create<GameStore>()(
 
   setPlayer: (player) => set({ player }),
 
-  // Armor resets at start of PLAYER_SPIN_PHASE (not combat start)
-  resetArmor: () =>
-    set((s) => ({
-      player: s.player ? { ...s.player, armor: 0 } : null,
-    })),
-
   applySpinResult: (result) =>
     set((s) => {
       if (!s.player) return s
@@ -244,16 +237,15 @@ export const useGameStore = create<GameStore>()(
     set((s) => {
       if (!s.player) return s
       const p = s.player
-      const effective =
-        type === 'magical'
-          ? amount
-          : Math.max(0, amount - p.armor)
+      const bypassArmor = type === 'debuff'
+      const absorbedByArmor = bypassArmor ? 0 : Math.min(p.armor, amount)
+      const effective = Math.max(0, amount - absorbedByArmor)
+
       return {
         player: {
           ...p,
           hp: Math.max(0, p.hp - effective),
-          // Armor consumed by physical hits
-          armor: type === 'physical' ? Math.max(0, p.armor - amount) : p.armor,
+          armor: bypassArmor ? p.armor : Math.max(0, p.armor - amount),
         },
       }
     })

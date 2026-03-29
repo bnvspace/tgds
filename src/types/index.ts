@@ -11,8 +11,8 @@ export type GamePhase =
   | 'settings'          // app settings: language / audio / haptics
   | 'initial_shop'      // FIRST PHASE: pick starting symbols (6-7 available)
   | 'world_map'         // SELECT_NODE (Swamp / Sewer / Citadel, no backtrack)
-  | 'combat_start'      // init Enemy, armor does NOT reset here
-  | 'player_spin'       // PLAYER_SPIN_PHASE: armor resets HERE, then spin
+  | 'combat_start'      // init Enemy
+  | 'player_spin'       // PLAYER_SPIN_PHASE
   | 'resolving'         // SYMBOL_RESOLUTION (7-step pipeline)
   | 'enemy_action'      // deterministic pattern, shown before spin
   | 'turn_end'          // check win/lose conditions
@@ -115,8 +115,8 @@ export interface SpinResult {
 
 // ── Enemy ────────────────────────────────────────────────
 export type AttackType = 'physical' | 'magical' | 'debuff'
-// physical: max(0, dmg - player.armor)
-// magical: bypasses armor entirely
+// physical/magical: first remove armor, then HP
+// debuff: bypasses armor and hits HP directly
 
 export type StatusEffectType = 'poison' | 'freeze' | 'burn' | 'block_reel'
 
@@ -158,7 +158,7 @@ export interface Enemy {
 export interface Player {
   hp: number
   maxHp: number
-  armor: number         // resets at start of PLAYER_SPIN_PHASE (not combat start)
+  armor: number         // persists until consumed by incoming damage
   reels: Reel[]
   relics: Relic[]
   tokens: number
