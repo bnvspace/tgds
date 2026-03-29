@@ -11,7 +11,7 @@
 /* Enemy viewport — like a monitor above the slot */
 .viewport {
   width: 100%;
-  min-height: 96px;
+  min-height: 128px;
   background: #0a0a0f;
   border: 2px solid #2a2a3e;
   display: flex;
@@ -22,10 +22,14 @@
 }
 
 .bossViewport {
-  min-height: 152px;
+  min-height: 240px;
 }
 
-.icon { font-size: 48px; line-height: 1; }
+.icon { font-size: 56px; line-height: 1; }
+
+.bossViewport .icon {
+  font-size: 92px;
+}
 
 .statusBadges {
   position: absolute;

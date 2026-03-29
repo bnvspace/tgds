@@ -37,6 +37,7 @@ export default function CombatScreen() {
   const player = useGameStore((state) => state.player)
   const currentEnemy = useGameStore((state) => state.currentEnemy)
   const setEnemy = useGameStore((state) => state.setEnemy)
+  const resetArmor = useGameStore((state) => state.resetArmor)
   const applySpinResult = useGameStore((state) => state.applySpinResult)
   const applyDamageToEnemy = useGameStore((state) => state.applyDamageToEnemy)
   const damagePlayer = useGameStore((state) => state.damagePlayer)
@@ -55,6 +56,7 @@ export default function CombatScreen() {
   const pendingRef = useRef<GameSymbol[]>([])
   const encounterRef = useRef<string | null>(null)
   const hasPlayerActedRef = useRef(false)
+  const encounterTokenRef = useRef(0)
 
   const [combatPhase, setCombatPhase] = useState<CombatPhase>('player_idle')
   const [combatLog, setCombatLog] = useState<string[]>([t('combat_start')])
@@ -73,7 +75,7 @@ export default function CombatScreen() {
     setCombatLog((prev) => [...prev.slice(-5), message])
   }
 
-  async function performEnemyTurn() {
+  async function performEnemyTurn(encounterToken = encounterTokenRef.current) {
     const liveState = useGameStore.getState()
     const livePlayer = liveState.player
     const liveEnemy = liveState.currentEnemy ?? enemy
@@ -86,6 +88,7 @@ export default function CombatScreen() {
 
     setCombatPhase('enemy_turn')
     await new Promise((resolve) => setTimeout(resolve, 700))
+    if (encounterToken !== encounterTokenRef.current) return
 
     const pattern = liveEnemy.attackPattern[liveEnemy.patternIndex]
     const attackType = pattern.type === 'debuff' ? 'physical' : pattern.type
@@ -108,6 +111,7 @@ export default function CombatScreen() {
     }
 
     await new Promise((resolve) => setTimeout(resolve, 400))
+    if (encounterToken !== encounterTokenRef.current) return
     setCombatPhase('player_idle')
   }
 
@@ -118,11 +122,13 @@ export default function CombatScreen() {
     if (encounterRef.current === encounterId) return
 
     encounterRef.current = encounterId
+    encounterTokenRef.current += 1
     pendingRef.current = []
     hasPlayerActedRef.current = false
+    resetArmor()
     setCombatLog([t('combat_start')])
     setCombatPhase('player_idle')
-  }, [player, enemy.id, enemy.maxHp, t])
+  }, [player, enemy.id, enemy.maxHp, resetArmor, t])
 
   async function resolveSpinOutcome(symbols: GameSymbol[], qteTier: QTETier | null) {
     if (!player) return
@@ -183,7 +189,7 @@ export default function CombatScreen() {
       return
     }
 
-    await performEnemyTurn()
+    await performEnemyTurn(encounterTokenRef.current)
   }
 
   async function handleSpin() {
