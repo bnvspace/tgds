@@ -68,10 +68,11 @@ const BOMB: GameSymbol = {
 }
 
 /**
- * Axe — armor counter
- * Deals baseAxeDamage + enemy.armor × AXE_ARMOR_MULT (1.5) physical damage.
- * The more armor the enemy has, the harder the Axe hits.
- * Against Iron Golem (armor 20): 8 + 20×1.5 = 38 physical damage.
+ * Axe — Turtle Build anchor
+ * Deals baseAxeDamage + player.armor × AXE_ARMOR_MULT (1.5) physical damage.
+ * The more armor the PLAYER has accumulated this turn, the harder the Axe hits.
+ * Stack Shield symbols → Axe converts defense into devastating offense.
+ * With 20 player armor: 8 + 20×1.5 = 38 total physical damage.
  */
 const AXE: GameSymbol = {
   id: 'axe',

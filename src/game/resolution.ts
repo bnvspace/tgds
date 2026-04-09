@@ -133,7 +133,7 @@ export function resolveSymbols(
   symbols: GameSymbol[],
   timingResults: TimingResult[],
   player: Player,
-  enemy: Enemy | null = null,
+  _enemy: Enemy | null = null,
   rerollsApplied: number[] = [],
 ): SpinResult {
   const physicalStrengthRanks = player.metaModifiers
@@ -184,9 +184,9 @@ export function resolveSymbols(
       bombChargeGained += 1  // increment once per bomb in spin
     }
 
-    // Axe: add armor-scaling bonus
-    if (effect.isAxe && enemy && enemy.armor > 0) {
-      symbolDamage += Math.floor(enemy.armor * BALANCE.AXE_ARMOR_MULT)
+    // Axe: scales from PLAYER's current armor (Turtle Build — stack shields, then hit hard)
+    if (effect.isAxe && player.armor > 0) {
+      symbolDamage += Math.floor(player.armor * BALANCE.AXE_ARMOR_MULT)
     }
 
     const symbolMagicDamage = (effect.magicDamage ?? 0) * symbol.level * matchMultiplier
