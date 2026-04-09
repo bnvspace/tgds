@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import type { GameSymbol, TimingTier } from '@/types'
 import { createGameIconNode } from '@/utils/gameIcon'
 import { haptics } from '@/utils/haptics'
+import { playReelTickSFX, playReelStopSFX } from '@/utils/audio'
 import styles from './SlotReel.module.css'
 
 const SYM_H = 80
@@ -186,6 +187,7 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
       if (boundary > lastBoundaryRef.current) {
         lastBoundaryRef.current = boundary
         haptics.reelTick()
+        playReelTickSFX()
       }
 
       rafRef.current = requestAnimationFrame(runLoop)
@@ -288,6 +290,7 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
           if (boundary > lastStopBoundary) {
             lastStopBoundary = boundary
             haptics.reelTick()
+            playReelTickSFX()
           }
 
           if (progress < 1) {
@@ -296,6 +299,7 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
           }
 
           haptics.reelLand()
+          playReelStopSFX()
           if (stripRef.current) {
             stripRef.current.style.transition = 'transform 65ms ease-in'
             stripRef.current.style.transform = `translateY(${targetY - OVERSHOOT_PX}px)`

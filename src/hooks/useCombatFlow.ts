@@ -7,13 +7,15 @@ import { resolveSymbols, preResolveModifiers } from '@/game/resolution'
 import { evaluateStopTiming } from '@/game/skillCheck'
 import {
   playButtonSFX,
-  playCoinSFX,
   playErrorSFX,
   playHealSFX,
   playHitSFX,
   playShieldSFX,
+  playMagicSFX,
+  playCheerSFX,
 } from '@/utils/audio'
 import { haptics } from '@/utils/haptics'
+import { triggerRewardBurst } from '@/components/RewardBurstLayer'
 import type { SlotMachineHandle } from '@/components/SlotMachine'
 
 export type CombatUiPhase =
@@ -166,6 +168,11 @@ export function useCombatFlow() {
     damagePlayer(pattern.damage, attackType)
     playErrorSFX()
     haptics.damageTaken()
+    
+    if (effectiveDamage > 0) {
+      window.dispatchEvent(new CustomEvent('screenShake', { detail: { type: 'heavy' } }))
+    }
+    
     log(`${t('enemy_attack')}: ${localizeAttackDescription(pattern.description)} - ${pattern.damage} ${localizeAttackType(pattern.type)}`)
     advanceEnemyPattern()
     syncCombatStorePhase('turn_end')
@@ -231,8 +238,9 @@ export function useCombatFlow() {
       applyStatusToEnemy(result.poisonStacksApplied, result.stunApplied)
     }
 
-    if (result.totalDamage > 0) {
-      playHitSFX()
+    if (result.totalDamage > 0 || result.totalMagicDamage > 0) {
+      if (result.totalDamage > 0) playHitSFX()
+      if (result.totalMagicDamage > 0) playMagicSFX()
       haptics.damageDealt()
     }
     if (result.totalArmor > 0) {
@@ -243,7 +251,7 @@ export function useCombatFlow() {
     }
     if (result.totalTokens > 0) {
       setTimeout(() => {
-        playCoinSFX()
+        triggerRewardBurst('coin', result.totalTokens)
         haptics.coinPickup()
       }, 300)
     }
@@ -258,6 +266,15 @@ export function useCombatFlow() {
     const timingLabel = result.bestTimingTier && result.bestTimingTier !== 'ok'
       ? `${t(`timing_${result.bestTimingTier}`)} ×${result.bestTimingTier === 'perfect' ? '2' : '1.5'}`
       : null
+
+    const perfects = result.timingTiers ? result.timingTiers.filter((t: TimingTier) => t === 'perfect').length : 0
+    const isMegaCrit = result.bestTimingTier === 'perfect' && perfects >= 3
+    if (isMegaCrit || result.matchGroups.length > 0) {
+      setTimeout(() => playCheerSFX(), 200)
+      window.dispatchEvent(new CustomEvent('screenShake', { detail: { type: 'heavy' } }))
+    } else if (result.bestTimingTier === 'perfect') {
+      window.dispatchEvent(new CustomEvent('screenShake', { detail: { type: 'soft' } }))
+    }
 
     const liveEnemy = useGameStore.getState().currentEnemy
     const armorTag = liveEnemy && liveEnemy.armor > 0 && result.totalPhysicalDamage > 0
@@ -291,6 +308,7 @@ export function useCombatFlow() {
     if (enemy.hp - result.totalDamage <= 0) {
       const finalCombatLog = log(t('enemy_defeated'))
       haptics.victory()
+      playCheerSFX()
       setCombatPhase('done')
       syncCombatStorePhase('turn_end')
       setTimeout(() => {

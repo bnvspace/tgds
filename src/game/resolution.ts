@@ -1,5 +1,5 @@
 import { BALANCE } from '@/constants'
-import type { Enemy, GameSymbol, MatchGroup, Player, QTEResult, SpinResult, Synergy, TimingResult, WeightedSymbol } from '@/types'
+import type { Enemy, GameSymbol, MatchGroup, Player, QTEResult, SpinResult, Synergy, TimingResult, TimingTier, WeightedSymbol } from '@/types'
 import { detectSynergies } from './synergies'
 import { getSymbolTimingMultiplier, bestWeaponTiming, makeDefaultTiming } from './skillCheck'
 
@@ -271,6 +271,7 @@ export function resolveSymbols(
     poisonStacksApplied: Math.round(poisonStacksApplied),
     stunApplied,
     bestTimingTier: bestTier,
+    timingTiers: timings.map((t) => t?.tier).filter(Boolean) as TimingTier[],
     rerollsApplied,
     bombChargeGained,
   }

@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useEffect, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
 import { shopBackdrop, symbolIconById, zoneBackdropByZone } from '@/assets/pixelArt'
 import GameIcon from '@/components/GameIcon'
@@ -7,6 +7,7 @@ import { useGameStore } from '@/store/gameStore'
 import type { CombatRewardOption, GameSymbol } from '@/types'
 import { playButtonSFX } from '@/utils/audio'
 import { haptics } from '@/utils/haptics'
+import { triggerRewardBurst } from '@/components/RewardBurstLayer'
 import styles from './PostCombatScreen.module.css'
 
 export default function PostCombatScreen() {
@@ -31,6 +32,14 @@ export default function PostCombatScreen() {
 
     return parts.join('  ') || t('no_effect')
   }
+
+  useEffect(() => {
+    if (reward && reward.chipReward > 0) {
+      setTimeout(() => {
+        triggerRewardBurst('chip', reward.chipReward)
+      }, 500)
+    }
+  }, [reward])
 
   function proceed() {
     playButtonSFX()

@@ -10,6 +10,7 @@ import LeaderboardScreen from '@/screens/LeaderboardScreen'
 import SettingsScreen from '@/screens/SettingsScreen'
 import MetaMenu from '@/screens/MetaMenu'
 import Layout from '@/components/Layout'
+import RewardBurstLayer from '@/components/RewardBurstLayer'
 import { useEffect, useRef, useState } from 'react'
 import { primeAudioPlayback, setAudioMuted, startBGM, stopBGM } from '@/utils/audio'
 import { useTranslation } from '@/i18n'
@@ -121,6 +122,7 @@ export default function App() {
       <AnimatePresence mode="wait">
         {renderScreen()}
       </AnimatePresence>
+      <RewardBurstLayer />
     </Layout>
   )
 }

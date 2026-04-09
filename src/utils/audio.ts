@@ -28,8 +28,10 @@ export const setAudioMuted = (muted: boolean) => {
   IS_MUTED = muted
   if (muted && bgmInterval) {
     stopBGM()
+    stopTavernAmbiance()
   } else if (!muted && bgmInterval === null && bgmWasPlaying) {
     startBGM()
+    startTavernAmbiance()
   }
 }
 
@@ -153,6 +155,52 @@ export function playButtonSFX() {
   beep('square', 660, 0.06, 0.07)
 }
 
+export function playReelTickSFX() {
+  // Very short, very quiet mechanical click
+  beep('square', 800, 0.015, 0.015)
+}
+
+export function playReelStopSFX() {
+  // Heavy mechanical thunk
+  beep('triangle', 180, 0.08, 0.2)
+  setTimeout(() => beep('square', 90, 0.1, 0.15), 10)
+}
+
+export function playCheerSFX() {
+  if (IS_MUTED) return
+  initContext()
+  if (!audioCtx) return
+
+  const bufferSize = audioCtx.sampleRate * 1.5 // 1.5 seconds of noise
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1
+  }
+
+  const noiseSource = audioCtx.createBufferSource()
+  noiseSource.buffer = buffer
+
+  const filter = audioCtx.createBiquadFilter()
+  filter.type = 'bandpass'
+  // Sweep frequency to simulate a crowd going "Yeeeaaah!"
+  filter.frequency.setValueAtTime(400, audioCtx.currentTime)
+  filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5)
+  filter.frequency.linearRampToValueAtTime(300, audioCtx.currentTime + 1.5)
+  filter.Q.value = 0.8
+
+  const gain = audioCtx.createGain()
+  gain.gain.setValueAtTime(0, audioCtx.currentTime)
+  gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.2)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5)
+
+  noiseSource.connect(filter)
+  filter.connect(gain)
+  gain.connect(audioCtx.destination)
+
+  noiseSource.start()
+}
+
 // ── Background Music (Dark Fantasy 8-bit Loop) ─────────────────────────────
 
 let bgmOscillator: OscillatorNode | null = null
@@ -215,5 +263,69 @@ export function primeAudioPlayback() {
 
   if (!IS_MUTED) {
     startBGM()
+    startTavernAmbiance()
+  }
+}
+
+// ── Tavern Ambiance ────────────────────────────────────────────────────────
+let ambientSource: AudioBufferSourceNode | null = null
+let ambientGain: GainNode | null = null
+
+export function startTavernAmbiance() {
+  if (IS_MUTED) return
+  initContext()
+  if (!audioCtx || ambientSource) return
+
+  const bufferSize = audioCtx.sampleRate * 2 // 2 seconds loop
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate)
+  const data = buffer.getChannelData(0)
+  
+  // Create rough brownish noise for crowd murmur
+  let lastOut = 0
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1
+    data[i] = (lastOut + (0.02 * white)) / 1.02
+    lastOut = data[i]
+    data[i] *= 3.5 // Compensate gain
+  }
+
+  ambientSource = audioCtx.createBufferSource()
+  ambientSource.buffer = buffer
+  ambientSource.loop = true
+
+  const filter = audioCtx.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.frequency.value = 350 // Keep it muffled, like distant conversations
+  filter.Q.value = 0.5
+
+  // Slower LFO to slightly modulate the filter frequency for more realistic murmur
+  const lfo = audioCtx.createOscillator()
+  lfo.type = 'sine'
+  lfo.frequency.value = 0.5 // 0.5 Hz
+  const lfoGain = audioCtx.createGain()
+  lfoGain.gain.value = 100 // modulate +/- 100 Hz
+  lfo.connect(lfoGain)
+  lfoGain.connect(filter.frequency)
+  lfo.start()
+
+  ambientGain = audioCtx.createGain()
+  ambientGain.gain.value = 0.15 // Quite low volume
+
+  ambientSource.connect(filter)
+  filter.connect(ambientGain)
+  ambientGain.connect(audioCtx.destination)
+
+  ambientSource.start()
+}
+
+export function stopTavernAmbiance() {
+  if (ambientSource) {
+    ambientSource.stop()
+    ambientSource.disconnect()
+    ambientSource = null
+  }
+  if (ambientGain) {
+    ambientGain.disconnect()
+    ambientGain = null
   }
 }

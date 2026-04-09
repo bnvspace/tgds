@@ -38,7 +38,9 @@ function getTelegramWebApp(): TelegramWebApp | null {
 
 export default function Layout({ children }: LayoutProps) {
   const [insets, setInsets] = useState<SafeAreaInset>(EMPTY_INSETS)
+  const [shakeClass, setShakeClass] = useState<string>('')
   const timeoutIdsRef = useRef<number[]>([])
+  const shakeTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     const tg = getTelegramWebApp()
@@ -91,6 +93,28 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, [])
 
+  useEffect(() => {
+    function handleShake(e: Event) {
+      const { type } = (e as CustomEvent<{ type: 'soft' | 'heavy' }>).detail
+      
+      setShakeClass(type === 'heavy' ? styles.heavyShake : styles.shake)
+      
+      if (shakeTimeoutRef.current) {
+        window.clearTimeout(shakeTimeoutRef.current)
+      }
+      
+      shakeTimeoutRef.current = window.setTimeout(() => {
+        setShakeClass('')
+      }, type === 'heavy' ? 600 : 400)
+    }
+
+    window.addEventListener('screenShake', handleShake)
+    return () => {
+      window.removeEventListener('screenShake', handleShake)
+      if (shakeTimeoutRef.current) window.clearTimeout(shakeTimeoutRef.current)
+    }
+  }, [])
+
   const rootStyle: CSSProperties & Record<string, string | number> = {
     '--layout-safe-top': `${insets.top}px`,
     '--layout-safe-bottom': `${insets.bottom}px`,
@@ -107,7 +131,7 @@ export default function Layout({ children }: LayoutProps) {
       className={styles.root}
       style={rootStyle}
     >
-      <div className={styles.frame}>
+      <div className={`${styles.frame} ${shakeClass}`.trim()}>
         <div className={styles.content}>{children}</div>
       </div>
     </div>

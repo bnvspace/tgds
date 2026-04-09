@@ -140,6 +140,7 @@ export interface SpinResult {
   poisonStacksApplied: number  // stacks added to enemy this spin
   stunApplied: boolean         // whether stun was applied this spin
   bestTimingTier: TimingTier | null
+  timingTiers?: TimingTier[]   // exact timing tier per reel
   rerollsApplied: number[]     // reel indices rerolled by Diamond or forced-perfect by Sawblade
   bombChargeGained: number     // how much bombCharge was added this spin
 }
