@@ -108,14 +108,14 @@ export default function MetaMenu() {
     setLocalChips(meta.totalChips)
   }
 
-  function handleStart() {
+  function handleSaveAndExit() {
     primeAudioPlayback()
     const allocated = MODIFIERS
       .filter((m) => (localMods[m.id] ?? 0) > 0)
       .map((m) => ({ modifierId: m.id, count: localMods[m.id] }))
 
     store.applyMetaAllocation(allocated, localChips)
-    startRun()
+    setPhase('meta_menu') // returns to StartScreen
   }
 
   return (
@@ -130,7 +130,7 @@ export default function MetaMenu() {
           className={styles.backBtn}
           onClick={() => {
             playButtonSFX()
-            setPhase('meta_menu')
+            handleSaveAndExit()
           }}
         >
           {t('back')}
@@ -204,8 +204,8 @@ export default function MetaMenu() {
         >
           {t('reset_all')}
         </button>
-        <button className={styles.startBtn} onClick={handleStart}>
-          {'>'} {t('start_run')}
+        <button className={styles.startBtn} onClick={handleSaveAndExit}>
+          {t('back_to_menu')}
         </button>
       </div>
     </motion.div>
