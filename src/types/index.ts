@@ -97,10 +97,17 @@ export interface Synergy {
   bonusArmor?: number
 }
 
+export interface MatchGroup {
+  symbol: GameSymbol
+  count: number
+  multiplier: number
+}
+
 // ── Symbol Resolution (7-step pipeline) ──────────────────
 export interface SpinResult {
   rolledSymbols: GameSymbol[]  // one per reel (NOT a grid!)
   qte: QTEResult
+  matchGroups: MatchGroup[]
   // Resolution steps output:
   baseDamage: number           // step 2
   baseArmor: number

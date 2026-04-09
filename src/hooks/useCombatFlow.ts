@@ -65,6 +65,7 @@ export function useCombatFlow() {
     t,
     localizeAttackDescription,
     localizeAttackType,
+    localizeSymbolName,
     localizeSynergyName,
   } = useTranslation()
 
@@ -206,6 +207,11 @@ export function useCombatFlow() {
 
     const logLine = [
       qteTier ? t(`qte_label_${qte.tier}`) : null,
+      result.matchGroups.length > 0
+        ? result.matchGroups.map((group) => (
+          `${t('match3_label')} ${localizeSymbolName(group.symbol)}`
+        )).join(', ')
+        : null,
       result.synergiesActivated.length > 0
         ? result.synergiesActivated.map((synergy) => localizeSynergyName(synergy)).join(', ')
         : null,

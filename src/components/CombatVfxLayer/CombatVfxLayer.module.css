@@ -180,6 +180,11 @@
   border-color: rgba(96, 184, 232, 0.46);
 }
 
+.chip[data-tone='combo'] {
+  color: #f6e7b2;
+  border-color: rgba(240, 208, 144, 0.64);
+}
+
 .chipIcon {
   width: 14px;
   height: 14px;

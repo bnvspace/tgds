@@ -9,14 +9,15 @@
 |---|----------|--------|
 | 0 | Docs Rebaseline: original-faithful rules | ✅ Готово |
 | 1 | Core Loop Rework: manual stop + старт из 3 символов | ✅ Готово |
-| 2 | Combat Readability: Match-3 + Enemy Intents | 🔄 В работе |
-| 3 | Skill Checks: тайминг остановки и crit logic | ⬜ Не начата |
-| 4 | Combat Math: armor / magic / poison / stun | ⬜ Не начата |
-| 5 | Shop & Run Economy: post-win shop + coin cap 100 | ⬜ Не начата |
-| 6 | Symbols & Builds: Bomb persist + Axe / Diamond / Sawblade | ⬜ Не начата |
-| 7 | Meta Progression: modules closer to original | ⬜ Не начата |
-| 8 | Atmosphere & Game Feel: tavern cabinet + reward physics | ⬜ Не начата |
-| 9 | TMA Polish & Deploy | ⬜ Не начата |
+| 2 | Combat Readability: Match-3 + Enemy Intents | ✅ Готово |
+| 3 | Inventory Pool RNG: shared symbol pool + deck-thinning | 🔄 В работе |
+| 4 | Skill Checks: тайминг остановки и crit logic | ⬜ Не начата |
+| 5 | Combat Math: armor / magic / poison / stun | ⬜ Не начата |
+| 6 | Shop & Run Economy: post-win shop + coin cap 100 | ⬜ Не начата |
+| 7 | Symbols & Builds: Bomb persist + Axe / Diamond / Sawblade | ⬜ Не начата |
+| 8 | Meta Progression: modules closer to original | ⬜ Не начата |
+| 9 | Atmosphere & Game Feel: tavern cabinet + reward physics | ⬜ Не начата |
+| 10 | TMA Polish & Deploy | ⬜ Не начата |
 
 > Статусы: ⬜ Не начата | 🔄 В работе | ✅ Готово | 🔒 Заблокировано
 
@@ -70,18 +71,18 @@
 
 ---
 
-## Итерация 2 — Combat Readability: Match-3 + Enemy Intents 🔄
+## Итерация 2 — Combat Readability: Match-3 + Enemy Intents ✅
 
 **Цель:** сделать спин тактически читаемым уже без полноценных skill checks.
 
 Что делаем:
 
-- [ ] Реализовать Match-3 как умножение суммарного базового эффекта группы ×3
-- [ ] Убрать искусственный forced-jackpot из `slotGenerator`
-- [ ] Добавить явную фиксацию match-групп в `SpinResult`
-- [ ] Показать Match-3 в combat log
-- [ ] Довести `Enemy Intents` до очевидного и читаемого вида на экране боя
-- [ ] Проверить, что игрок до спина видит, что именно сделает враг следующим ходом
+- [x] Реализовать Match-3 как умножение суммарного базового эффекта группы ×3
+- [x] Убрать искусственный forced-jackpot из `slotGenerator`
+- [x] Добавить явную фиксацию match-групп в `SpinResult`
+- [x] Показать Match-3 в combat log
+- [x] Довести `Enemy Intents` до очевидного и читаемого вида на экране боя
+- [x] Проверить, что игрок до спина видит, что именно сделает враг следующим ходом
 
 Тест:
 
@@ -92,7 +93,30 @@
 
 ---
 
-## Итерация 3 — Skill Checks: Timing Crits
+## Итерация 3 — Inventory Pool RNG: Shared Symbol Pool + Deck-Thinning 🔄
+
+**Цель:** перевести слот-машину на честный RNG из общего инвентаря игрока.
+
+Что делаем:
+
+- [ ] Сделать общий inventory player-а источником всех спинов
+- [ ] Убрать независимые пулы барабанов как основную модель данных
+- [ ] Перевести `spin()` на выбор символов из shared pool
+- [ ] Переделать магазин и removal под редактирование общего inventory
+- [ ] Жестко запретить удаление ниже 3 символов
+- [ ] Сохранить совместимость с текущим manual stop flow
+
+Тест:
+
+1. Начать ран с 3 стартовыми символами.
+2. Убедиться, что каждый барабан тянет символы из общего инвентаря игрока.
+3. После магазина удалить лишний символ.
+4. Проверить, что частота Match-3 заметно растет на маленьком пуле.
+5. Убедиться, что опуститься ниже 3 символов нельзя.
+
+---
+
+## Итерация 4 — Skill Checks: Timing Crits
 
 **Цель:** завязать skill checks на ручной остановке.
 
@@ -115,7 +139,7 @@
 
 ---
 
-## Итерация 4 — Combat Math: Armor / Magic / Poison / Stun
+## Итерация 5 — Combat Math: Armor / Magic / Poison / Stun
 
 **Цель:** сделать тактический бой, а не только слот-анимацию.
 
@@ -137,7 +161,7 @@
 
 ---
 
-## Итерация 5 — Shop & Run Economy
+## Итерация 6 — Shop & Run Economy
 
 **Цель:** переделать экономику забега ближе к оригиналу.
 
@@ -161,7 +185,7 @@
 
 ---
 
-## Итерация 6 — Symbols & Builds
+## Итерация 7 — Symbols & Builds
 
 **Цель:** ввести ключевые архетипы оригинала.
 
@@ -183,7 +207,7 @@
 
 ---
 
-## Итерация 7 — Meta Progression
+## Итерация 8 — Meta Progression
 
 **Цель:** приблизить модули автомата к оригиналу.
 
@@ -207,7 +231,7 @@
 
 ---
 
-## Итерация 8 — Atmosphere & Game Feel
+## Итерация 9 — Atmosphere & Game Feel
 
 **Цель:** придать прототипу аддиктивное тактильное ощущение оригинала.
 
@@ -228,7 +252,7 @@
 
 ---
 
-## Итерация 9 — TMA Polish & Deploy
+## Итерация 10 — TMA Polish & Deploy
 
 **Цель:** довести flow до Telegram Mini App качества.
 

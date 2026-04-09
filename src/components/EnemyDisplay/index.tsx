@@ -24,6 +24,8 @@ export default function EnemyDisplay({
   lastSpinResult = null,
 }: EnemyDisplayProps) {
   const currentPattern = enemy.attackPattern[enemy.patternIndex]
+  const intentStep = enemy.patternIndex + 1
+  const intentTotalSteps = enemy.attackPattern.length
   const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100)
   const {
     t,
@@ -80,7 +82,12 @@ export default function EnemyDisplay({
             />
           </span>
           <div className={styles.attackCopy}>
-            <span className={styles.nextLabel}>{t('next_attack')}</span>
+            <div className={styles.intentMetaRow}>
+              <span className={styles.nextLabel}>{t('intent_label')}</span>
+              <span className={styles.intentCycle}>
+                {t('intent_cycle')} {intentStep}/{intentTotalSteps}
+              </span>
+            </div>
             <span className={styles.attackType}>{localizeAttackType(currentPattern.type)}</span>
             <span className={styles.attackDesc}>{localizeAttackDescription(currentPattern.description)}</span>
           </div>

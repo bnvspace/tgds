@@ -14,7 +14,7 @@ interface BurstChip {
   id: string
   icon: string
   value: string
-  tone: 'damage' | 'armor' | 'tokens' | 'heal'
+  tone: 'damage' | 'armor' | 'tokens' | 'heal' | 'combo'
 }
 
 interface BurstState {
@@ -29,6 +29,14 @@ interface BurstState {
 
 function createBurstState(result: SpinResult, id: number): BurstState {
   const chips: BurstChip[] = [
+    result.matchGroups.length > 0
+      ? {
+        id: 'combo',
+        icon: symbolIconById.diamond,
+        value: 'x3',
+        tone: 'combo',
+      }
+      : null,
     result.totalDamage > 0
       ? {
         id: 'damage',
