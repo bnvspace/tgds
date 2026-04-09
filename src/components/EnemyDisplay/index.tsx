@@ -100,17 +100,24 @@ export default function EnemyDisplay({
       </div>
 
       {currentPattern && (() => {
-        const effectiveDmg = currentPattern.type === 'physical' && enemy.armor > 0
-          ? Math.max(0, currentPattern.damage - enemy.armor)
-          : currentPattern.damage
-        const armorReduces = currentPattern.type === 'physical' && enemy.armor > 0
+        const hits = currentPattern.hits && currentPattern.hits.length > 0 
+          ? currentPattern.hits 
+          : [{ damage: currentPattern.damage!, type: currentPattern.type!, description: currentPattern.description! }]
+        const totalDamage = hits.reduce((sum, h) => sum + h.damage, 0)
+        const primaryType = hits[0].type
+        const displayDesc = currentPattern.description || hits.map((h) => localizeAttackDescription(h.description)).join(' + ')
+        
+        const effectiveDmg = primaryType === 'physical' && enemy.armor > 0
+          ? Math.max(0, totalDamage - enemy.armor)
+          : totalDamage
+        const armorReduces = primaryType === 'physical' && enemy.armor > 0
 
         return (
-          <div className={styles.nextAttack} data-attack={currentPattern.type}>
-            <span className={styles.intentBadge} data-attack={currentPattern.type}>
+          <div className={styles.nextAttack} data-attack={primaryType}>
+            <span className={styles.intentBadge} data-attack={primaryType}>
               <GameIcon
-                icon={intentIconByType[currentPattern.type]}
-                alt={localizeAttackType(currentPattern.type)}
+                icon={intentIconByType[primaryType]}
+                alt={localizeAttackType(primaryType)}
                 decorative
                 className={styles.intentIcon}
               />
@@ -122,14 +129,16 @@ export default function EnemyDisplay({
                   {t('intent_cycle')} {intentStep}/{intentTotalSteps}
                 </span>
               </div>
-              <span className={styles.attackType}>{localizeAttackType(currentPattern.type)}</span>
-              <span className={styles.attackDesc}>{localizeAttackDescription(currentPattern.description)}</span>
+              <span className={styles.attackType}>
+                {hits.length > 1 ? `${hits.length}x Multi-Hit` : localizeAttackType(primaryType)}
+              </span>
+              <span className={styles.attackDesc}>{displayDesc}</span>
             </div>
             <div className={styles.attackDmgCol}>
               <span className={styles.attackDmg}>-{effectiveDmg}</span>
               {armorReduces && (
                 <span className={styles.attackDmgReduced}>
-                  -{currentPattern.damage} 🛡 {enemy.armor}
+                  -{totalDamage} 🛡 {enemy.armor}
                 </span>
               )}
             </div>

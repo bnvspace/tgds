@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { GamePhase, GameSymbol, TimingTier, TimingResult } from '@/types'
+import type { GamePhase, GameSymbol, TimingTier, TimingResult, EnemyAttack } from '@/types'
 import { useGameStore } from '@/store/gameStore'
 import { useTranslation } from '@/i18n'
 import { spin } from '@/game/slotGenerator'
@@ -148,36 +148,66 @@ export function useCombatFlow() {
       }
     }
 
-    // ── Stun: skip enemy action ──────────────────────────
-    if (wasStunned) {
-      log(`⚡ ${t('status_stunned')}`)
-      await new Promise((resolve) => setTimeout(resolve, 400))
-      if (encounterToken !== encounterTokenRef.current) return
-      setCombatPhase('player_idle')
-      syncCombatStorePhase('combat_start')
-      return
-    }
-
-    // ── Normal enemy attack ───────────────────────────────
+    // ── Execute enemy attacks (multi-hit support) ─────────
     const pattern = liveEnemy.attackPattern[liveEnemy.patternIndex]
-    const attackType = pattern.type
-    const effectiveDamage = attackType === 'debuff'
-      ? pattern.damage
-      : Math.max(0, pattern.damage - livePlayer.armor)
+    const hits = pattern.hits && pattern.hits.length > 0 
+      ? pattern.hits 
+      : [pattern as EnemyAttack]
+    let currentStun = wasStunned
+    let isDead = false
 
-    damagePlayer(pattern.damage, attackType)
-    playErrorSFX()
-    haptics.damageTaken()
-    
-    if (effectiveDamage > 0) {
-      window.dispatchEvent(new CustomEvent('screenShake', { detail: { type: 'heavy' } }))
+    for (const hit of hits) {
+      // ── Stun: skip ONE hit iteration ──────────────────────────
+      if (currentStun) {
+        log(`⚡ ${t('status_stunned')}`)
+        currentStun = false
+        await new Promise((resolve) => setTimeout(resolve, 400))
+        if (encounterToken !== encounterTokenRef.current) return
+        continue
+      }
+
+      const activePlayer = useGameStore.getState().player!
+      const attackType = hit.type
+      const effectiveDamage = attackType === 'debuff'
+        ? hit.damage
+        : Math.max(0, hit.damage - activePlayer.armor)
+
+      damagePlayer(hit.damage, attackType)
+      playErrorSFX()
+      haptics.damageTaken()
+      
+      if (effectiveDamage > 0) {
+        window.dispatchEvent(new CustomEvent('screenShake', { detail: { type: 'heavy' } }))
+      }
+      
+      log(`${t('enemy_attack')}: ${localizeAttackDescription(hit.description)} - ${hit.damage} ${localizeAttackType(hit.type)}`)
+      
+      const afterHitPlayer = useGameStore.getState().player!
+      
+      if (afterHitPlayer.hp <= 0) {
+        if (afterHitPlayer.extraLives > 0) {
+          // Trigger Revive Extra Life!
+          useGameStore.setState((s) => {
+             if (!s.player) return s
+             return { player: { ...s.player, hp: s.player.maxHp, extraLives: s.player.extraLives - 1 } }
+          })
+          window.dispatchEvent(new CustomEvent('screenShake', { detail: { type: 'heavy' } }))
+          log(`💚 Revived! (Lives left: ${afterHitPlayer.extraLives - 1})`)
+          await new Promise((resolve) => setTimeout(resolve, 400))
+        } else {
+          isDead = true
+          break
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      if (encounterToken !== encounterTokenRef.current) return
     }
-    
-    log(`${t('enemy_attack')}: ${localizeAttackDescription(pattern.description)} - ${pattern.damage} ${localizeAttackType(pattern.type)}`)
+
     advanceEnemyPattern()
     syncCombatStorePhase('turn_end')
 
-    if (livePlayer.hp - effectiveDamage <= 0) {
+    if (isDead) {
       log(t('you_died'))
       haptics.defeat()
       setCombatPhase('done')
@@ -185,8 +215,6 @@ export function useCombatFlow() {
       return
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 400))
-    if (encounterToken !== encounterTokenRef.current) return
     setCombatPhase('player_idle')
     syncCombatStorePhase('combat_start')
   }

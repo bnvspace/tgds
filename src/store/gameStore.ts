@@ -12,6 +12,7 @@ import type {
   GameSymbol,
   WeightedSymbol,
   Reel,
+  ZoneType,
 } from '@/types'
 import type { ModifierId } from '@/types'
 import { ALL_SYMBOLS, BASE_STARTER_SYMBOL_IDS, STARTER_REELS } from '@/game/symbols'
@@ -35,15 +36,17 @@ const CHIP_REWARD_BY_TYPE = {
   elite: 4,
   boss:  20,
 } as const
-const TOKEN_REWARD_BY_ZONE = {
+const TOKEN_REWARD_BY_ZONE: Record<ZoneType, number> = {
   swamp: 8,
   sewer: 12,
   citadel: 16,
+  arena: 20,
 } as const
-const BONUS_TOKEN_REWARD_BY_ZONE = {
+const BONUS_TOKEN_REWARD_BY_ZONE: Record<ZoneType, number> = {
   swamp: 6,
   sewer: 8,
   citadel: 10,
+  arena: 12,
 } as const
 const SYMBOL_REWARD_COUNT = 2
 const SYMBOL_UNLOCK_MILESTONES = [
@@ -183,6 +186,7 @@ const DEFAULT_PLAYER: Player = {
   bombCharge: 0,
   metaModifiers: [],
   fightsWon: 0,
+  extraLives: 0,
 }
 
 // Full initial state
@@ -388,6 +392,7 @@ interface GameStore extends GameState {
 
   // ── WorldMap ─────────────────────────────────────────
   generateMap: () => void
+  enterArena: () => void
   setCurrentNode: (nodeId: string) => void
 
   // ── MetaMenu ────────────────────────────────────────
@@ -409,6 +414,9 @@ export const useGameStore = create<GameStore>()(
     const hpBonus = meta.allocatedModifiers
       .filter((m) => m.modifierId === 'health_core')
       .reduce((sum, m) => sum + m.count * 20, 0)
+    const extraLives = meta.allocatedModifiers
+      .filter((m) => m.modifierId === 'extra_life')
+      .reduce((sum, m) => sum + m.count, 0)
     const reelBonus = meta.allocatedModifiers
       .filter((m) => m.modifierId === 'reel_slot')
       .reduce((sum, m) => sum + m.count, 0)
@@ -420,6 +428,7 @@ export const useGameStore = create<GameStore>()(
         ...DEFAULT_PLAYER,
         maxHp: 100 + hpBonus,
         hp: 100 + hpBonus,
+        extraLives,
         reels,
         symbolInventory: [],
         metaModifiers: meta.allocatedModifiers.flatMap((allocation) => (
@@ -777,8 +786,23 @@ export const useGameStore = create<GameStore>()(
     set((s) => ({
       mapNodes: generateWorldMap(Date.now() + s.worldTier * 9973),
       currentNodeId: null,
-      currentZone: 'swamp',
+      currentZone: s.currentZone === 'arena' ? 'arena' : 'swamp',
     })),
+
+  enterArena: () =>
+    set((s) => {
+      // In Endless Mode, maxHp is restored when continuing
+      const newHp = s.player ? s.player.maxHp : 100
+      
+      return {
+        currentZone: 'arena',
+        worldTier: s.worldTier + 1,
+        mapNodes: generateWorldMap(Date.now() + s.worldTier * 1337, true),
+        currentNodeId: null,
+        phase: 'world_map',
+        player: s.player ? { ...s.player, hp: newHp } : null,
+      }
+    }),
 
   setCurrentNode: (nodeId) =>
     set((s) => ({

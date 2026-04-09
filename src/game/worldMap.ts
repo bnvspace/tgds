@@ -31,11 +31,13 @@ interface FloorSpec {
   nodes: Array<{ type: NodeType; col: number }>
 }
 
-function getFloorSpec(floorIndex: number, rng: () => number): FloorSpec {
-  const zone = ZONE_TYPES[floorIndex % ZONE_TYPES.length]
+function getFloorSpec(floorIndex: number, rng: () => number, isArena = false): FloorSpec {
+  const zone = isArena ? 'arena' : ZONE_TYPES[floorIndex % ZONE_TYPES.length]
   const nodeCount = 3 + (floorIndex > 0 ? 1 : 0)
   const nodes: Array<{ type: NodeType; col: number }> = [{ type: 'combat', col: 0 }]
-  const possibleTypes: NodeType[] = ['combat', 'combat', 'shop', 'elite', 'heal']
+  const possibleTypes: NodeType[] = isArena 
+    ? ['combat', 'elite', 'shop', 'combat', 'heal', 'elite']
+    : ['combat', 'combat', 'shop', 'elite', 'heal']
 
   for (let col = 1; col < nodeCount; col += 1) {
     nodes.push({
@@ -124,7 +126,7 @@ function isMapFullyConnected(nodes: MapNode[]): boolean {
   })
 }
 
-function buildWorldMap(seed: number): MapNode[] {
+function buildWorldMap(seed: number, isArena = false): MapNode[] {
   const rng = seededRng(seed)
   const nodes: MapNode[] = []
   const nodeMap = new Map<string, MapNode>()
@@ -132,7 +134,7 @@ function buildWorldMap(seed: number): MapNode[] {
   let idCounter = 0
 
   for (let floorIndex = 0; floorIndex < 3; floorIndex += 1) {
-    const floor = getFloorSpec(floorIndex, rng)
+    const floor = getFloorSpec(floorIndex, rng, isArena)
     const floorIds: string[] = []
 
     floor.nodes.forEach((spec) => {
@@ -163,7 +165,7 @@ function buildWorldMap(seed: number): MapNode[] {
   const bossNode: MapNode = {
     id: bossId,
     type: 'boss',
-    zone: 'citadel',
+    zone: isArena ? 'arena' : 'citadel',
     visited: false,
     connections: [],
     position: { x: 0.5, y: 0.9 },
@@ -180,13 +182,13 @@ function buildWorldMap(seed: number): MapNode[] {
   return nodes
 }
 
-export function generateWorldMap(seed = Date.now()): MapNode[] {
+export function generateWorldMap(seed = Date.now(), isArena = false): MapNode[] {
   for (let attempt = 0; attempt < 24; attempt += 1) {
-    const map = buildWorldMap(seed + attempt * 7919)
+    const map = buildWorldMap(seed + attempt * 7919, isArena)
     if (isMapFullyConnected(map)) {
       return map
     }
   }
 
-  return buildWorldMap(seed)
+  return buildWorldMap(seed, isArena)
 }

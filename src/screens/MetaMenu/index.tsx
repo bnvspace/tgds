@@ -54,6 +54,14 @@ const MODIFIERS: Array<{
     chipsCost: 20,
     max: 3,
   },
+  {
+    id: 'extra_life',
+    nameKey: 'mod_revive_name',
+    icon: 'REV',
+    descKey: 'mod_revive_desc',
+    chipsCost: 50,
+    max: 3,
+  },
 ]
 
 export default function MetaMenu() {

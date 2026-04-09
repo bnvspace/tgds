@@ -32,7 +32,7 @@ export type SymbolTag =
   | 'axe' | 'sawblade'
 
 // ── Zone types ───────────────────────────────────────────
-export type ZoneType = 'swamp' | 'sewer' | 'citadel'
+export type ZoneType = 'swamp' | 'sewer' | 'citadel' | 'arena'
 export type NodeType = 'combat' | 'elite' | 'shop' | 'heal' | 'boss'
 
 // ── Symbol ───────────────────────────────────────────────
@@ -152,10 +152,14 @@ export type AttackType = 'physical' | 'magical' | 'debuff'
 
 export type StatusEffectType = 'poison' | 'freeze' | 'burn' | 'block_reel'
 
-export interface AttackPattern {
+export interface EnemyAttack {
   damage: number
   type: AttackType
-  description: string  // shown to player BEFORE spin (telegraphed)
+  description: string
+}
+
+export interface AttackPattern extends Partial<EnemyAttack> {
+  hits?: EnemyAttack[] // if pattern has multiple hits
 }
 
 export interface ReelBlockEffect {
@@ -199,6 +203,7 @@ export interface Player {
   bombCharge: number
   metaModifiers: Modifier[]
   fightsWon: number     // tracks boss kills for symbol unlocks
+  extraLives: number    // revive mechanics
 }
 
 // ── Relic ────────────────────────────────────────────────
@@ -227,6 +232,7 @@ export type ModifierId =
   | 'damage_reduction'   // -15% damage taken, 35 chips
   | 'reel_slot'          // +1 reel (3→4→5 max), 100 chips
   | 'token_collector'    // +tokens from Coin symbols, 40 chips
+  | 'extra_life'         // Revives player with max HP, 50 chips
 
 export interface Modifier {
   id: ModifierId

@@ -358,6 +358,22 @@ export const zoneBackdropByZone: Record<ZoneType, string> = {
     <circle cx="32" cy="54" r="7" fill="#f0d090" opacity="0.12"/>
     <circle cx="128" cy="54" r="7" fill="#f0d090" opacity="0.12"/>
   `),
+  arena: backdrop(`
+    <rect width="160" height="90" fill="#07060b"/>
+    <rect y="0" width="160" height="20" fill="#2d0c0c"/>
+    <rect y="20" width="160" height="18" fill="#1f0a0a"/>
+    <rect y="38" width="160" height="18" fill="#140808"/>
+    <rect y="56" width="160" height="34" fill="#0b0505"/>
+    <path d="M62 16 Q80 -4 98 16 V42 H62 Z" fill="#8e1f31"/>
+    <path d="M68 18 Q80 6 92 18 V38 H68 Z" fill="#c82626"/>
+    <rect x="76" y="16" width="8" height="22" fill="#ff4444"/>
+    <rect x="0" y="62" width="160" height="2" fill="#5c1b2a"/>
+    <rect x="0" y="64" width="160" height="26" fill="#0a0a0f"/>
+    <circle cx="32" cy="54" r="3" fill="#ff4444"/>
+    <circle cx="128" cy="54" r="3" fill="#ff4444"/>
+    <circle cx="32" cy="54" r="9" fill="#ff4444" opacity="0.3"/>
+    <circle cx="128" cy="54" r="9" fill="#ff4444" opacity="0.3"/>
+  `),
 }
 
 export const startScreenBackdrop = panorama(`

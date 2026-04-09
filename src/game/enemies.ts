@@ -188,7 +188,33 @@ export const CITADEL_ENEMIES: Enemy[] = [
   },
 ]
 
-const ALL_ENEMIES = [...SWAMP_ENEMIES, ...SEWER_ENEMIES, ...CITADEL_ENEMIES]
+export const EGGSCALIBUR: Enemy = {
+  id: 'eggscalibur',
+  name: 'Egg of Karkul',
+  icon: '🥚',
+  zone: 'arena',
+  hp: 9999,
+  maxHp: 9999,
+  armor: 0,
+  attackPattern: [
+    {
+      description: 'The Egg Cracks...',
+      hits: [
+        { damage: 1, type: 'physical', description: 'Weak poke' },
+        { damage: 1250, type: 'magical', description: 'Omelette Obliteration' },
+        { damage: 1250, type: 'magical', description: 'Omelette Obliteration' },
+      ],
+    },
+    { damage: 30, type: 'physical', description: 'Shell spin' },
+    { damage: 0, type: 'debuff', description: 'Yolk blinding' },
+  ],
+  patternIndex: 0,
+  statusEffects: [],
+  blockedReels: [],
+  isBoss: true,
+}
+
+const ALL_ENEMIES = [...SWAMP_ENEMIES, ...SEWER_ENEMIES, ...CITADEL_ENEMIES, EGGSCALIBUR]
 
 const HP_SCALE_PER_TIER = 0.18
 const DAMAGE_SCALE_PER_TIER = 0.12
@@ -206,16 +232,26 @@ function scaleEnemy(enemy: Enemy, worldTier: number): Enemy {
     maxHp: scaledMaxHp,
     attackPattern: enemy.attackPattern.map((attack) => ({
       ...attack,
-      damage: attack.damage > 0 ? Math.round(attack.damage * damageScale) : 0,
+      damage: attack.damage ? Math.round(attack.damage * damageScale) : 0,
+      hits: attack.hits?.map((hit) => ({
+        ...hit,
+        damage: hit.damage > 0 ? Math.round(hit.damage * damageScale) : 0,
+      }))
     })),
     patternIndex: 0,
   }
 }
 
 export function getRandomEnemy(zone: ZoneType, bossOnly = false, worldTier = 0): Enemy {
-  const pool = zone === 'swamp' ? SWAMP_ENEMIES
-    : zone === 'sewer' ? SEWER_ENEMIES
-      : CITADEL_ENEMIES
+  let pool: Enemy[] = []
+  if (zone === 'arena') {
+    pool = bossOnly ? [EGGSCALIBUR] : ALL_ENEMIES.filter((e) => !e.isBoss)
+  } else {
+    pool = zone === 'swamp' ? SWAMP_ENEMIES
+      : zone === 'sewer' ? SEWER_ENEMIES
+        : CITADEL_ENEMIES
+  }
+
   const filtered = bossOnly ? pool.filter((enemy) => enemy.isBoss) : pool.filter((enemy) => !enemy.isBoss)
   const enemy = filtered[Math.floor(Math.random() * filtered.length)]
   return scaleEnemy(enemy, worldTier)

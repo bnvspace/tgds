@@ -225,6 +225,7 @@ function GameOverScreen() {
 function VictoryScreen() {
   const resetGame = useGameStore((s) => s.resetGame)
   const setPhase = useGameStore((s) => s.setPhase)
+  const enterArena = useGameStore((s) => s.enterArena)
   const player = useGameStore((s) => s.player)
   const meta = useGameStore((s) => s.meta)
   const { t } = useTranslation()
@@ -243,6 +244,11 @@ function VictoryScreen() {
   function handleMenu() {
     playButtonSFX()
     resetGame()
+  }
+
+  function handleEnterArena() {
+    playButtonSFX()
+    enterArena()
   }
 
   const chipsTotal = meta.totalChips
@@ -305,11 +311,27 @@ function VictoryScreen() {
         ))}
       </motion.div>
 
-      {/* CTA: spend chips */}
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: visible ? 1 : 0 }}
         transition={{ delay: 0.8 }}
+        onClick={handleEnterArena}
+        style={{
+          fontFamily: "'Press Start 2P', monospace", fontSize: 10,
+          color: '#ffffff', background: '#c82626', border: '3px solid #ff4444',
+          padding: '16px 20px', cursor: 'pointer', borderRadius: 0,
+          boxShadow: '4px 4px 0 #000', width: '100%', letterSpacing: 1,
+          animation: 'heavyShake 4s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite both',
+        }}
+      >
+        ⚔️ {t('enter_arena') ?? 'ENTER ARENA'}
+      </motion.button>
+
+      {/* CTA: spend chips */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: visible ? 1 : 0 }}
+        transition={{ delay: 0.9 }}
         onClick={handleModifiers}
         style={{
           fontFamily: "'Press Start 2P', monospace", fontSize: 10,
