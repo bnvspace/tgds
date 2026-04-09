@@ -223,6 +223,7 @@ export interface Relic {
 export type ModifierId =
   | 'physical_strength'  // +20% physical dmg / level, 50 chips
   | 'health_core'        // +base HP, 25 chips
+  | 'damage_reduction'   // -15% damage taken, 35 chips
   | 'reel_slot'          // +1 reel (3→4→5 max), 100 chips
   | 'token_collector'    // +tokens from Coin symbols, 40 chips
 

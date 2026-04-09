@@ -23,6 +23,14 @@ const MODIFIERS: Array<{
     max: 5,
   },
   {
+    id: 'damage_reduction',
+    nameKey: 'mod_def_name',
+    icon: 'ARM',
+    descKey: 'mod_def_desc',
+    chipsCost: 35,
+    max: 3,
+  },
+  {
     id: 'physical_strength',
     nameKey: 'mod_str_name',
     icon: 'DMG',

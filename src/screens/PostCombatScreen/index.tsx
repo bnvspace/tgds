@@ -120,6 +120,16 @@ export default function PostCombatScreen() {
               </span>
             </div>
           </div>
+
+          {reward.chipReward > 0 && (
+            <div className={styles.rewardCard} data-tone="chips">
+              <span className={styles.chipEmoji}>🟢</span>
+              <div className={styles.rewardCopy}>
+                <span className={styles.rewardLabel}>{t('chips')}</span>
+                <span className={styles.rewardValue} style={{ color: '#4caf91' }}>+{reward.chipReward}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.totalPanel}>

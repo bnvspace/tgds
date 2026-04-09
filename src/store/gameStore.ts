@@ -30,6 +30,11 @@ const DEFAULT_META: MetaProgress = {
 }
 
 export const BOSS_CHIPS_REWARD = 20
+const CHIP_REWARD_BY_TYPE = {
+  mob:   2,
+  elite: 4,
+  boss:  20,
+} as const
 const TOKEN_REWARD_BY_ZONE = {
   swamp: 8,
   sewer: 12,
@@ -320,13 +325,17 @@ function buildCombatReward(
     symbol,
   }))
 
+  const chipReward = enemy.isBoss
+    ? CHIP_REWARD_BY_TYPE.boss
+    : CHIP_REWARD_BY_TYPE.mob
+
   return {
     enemyId: enemy.id,
     enemyName: enemy.name,
     enemyIcon: enemy.icon,
     zone: enemy.zone,
     tokenReward: TOKEN_REWARD_BY_ZONE[enemy.zone],
-    chipReward: enemy.isBoss ? BOSS_CHIPS_REWARD : 0,
+    chipReward,
     isBoss: enemy.isBoss,
     combatLog,
     options: [...symbolOptions, buildSupportReward(enemy, player)],
@@ -624,7 +633,7 @@ export const useGameStore = create<GameStore>()(
         },
         meta: {
           ...s.meta,
-          totalChips: enemy.isBoss ? s.meta.totalChips + BOSS_CHIPS_REWARD : s.meta.totalChips,
+          totalChips: s.meta.totalChips + combatReward.chipReward,
           unlockedSymbolIds: nextUnlockedSymbolIds,
           unlockedStarterSymbolIds: nextUnlockedStarterSymbolIds,
         },
@@ -639,8 +648,15 @@ export const useGameStore = create<GameStore>()(
       if (!s.player) return s
       const p = s.player
       const bypassArmor = type === 'debuff'
-      const absorbedByArmor = bypassArmor ? 0 : Math.min(p.armor, amount)
-      const effective = Math.max(0, amount - absorbedByArmor)
+
+      // damage_reduction modifier: each rank reduces incoming by 15%
+      const reductionRanks = p.metaModifiers
+        .filter((m) => m.id === 'damage_reduction').length
+      const reductionMult = Math.max(0.1, 1 - reductionRanks * 0.15)
+      const reducedAmount = Math.max(1, Math.round(amount * reductionMult))
+
+      const absorbedByArmor = bypassArmor ? 0 : Math.min(p.armor, reducedAmount)
+      const effective = Math.max(0, reducedAmount - absorbedByArmor)
 
       return {
         player: {
