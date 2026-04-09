@@ -9,7 +9,7 @@
 export type GamePhase =
   | 'meta_menu'         // main menu + microchip modifiers (free respec)
   | 'settings'          // app settings: language / audio / haptics
-  | 'initial_shop'      // FIRST PHASE: pick starting symbols (6-7 available)
+  | 'start_symbols'     // FIRST PHASE: choose exactly 3 starting symbols
   | 'world_map'         // SELECT_NODE (Swamp / Sewer / Citadel, no backtrack)
   | 'combat_start'      // init Enemy
   | 'player_spin'       // PLAYER_SPIN_PHASE
@@ -158,10 +158,11 @@ export interface Enemy {
 export interface Player {
   hp: number
   maxHp: number
-  armor: number         // persists until consumed by incoming damage
+  armor: number         // resets at the start of PLAYER_SPIN_PHASE
   reels: Reel[]
   relics: Relic[]
   tokens: number
+  bombCharge: number
   metaModifiers: Modifier[]
   fightsWon: number     // tracks boss kills for symbol unlocks
 }
@@ -202,6 +203,7 @@ export interface Modifier {
 export interface MetaProgress {
   totalChips: number
   unlockedSymbolIds: string[]   // grows as bosses are defeated
+  unlockedStarterSymbolIds: string[]
   // Free respec before each run (Refund All)
   allocatedModifiers: Array<{ modifierId: ModifierId; count: number }>
   language?: 'en' | 'ru'
@@ -219,6 +221,28 @@ export interface MapNode {
   position: { x: number; y: number }
 }
 
+export type CombatRewardOptionType = 'symbol' | 'heal' | 'tokens'
+
+export interface CombatRewardOption {
+  id: string
+  type: CombatRewardOptionType
+  symbol?: GameSymbol
+  amount?: number
+}
+
+export interface CombatReward {
+  enemyId: string
+  enemyName: string
+  enemyIcon: string
+  zone: ZoneType
+  tokenReward: number
+  chipReward: number
+  isBoss: boolean
+  combatLog: string[]
+  options: CombatRewardOption[]
+  newUnlocks: GameSymbol[]
+}
+
 // ── Global Game State ─────────────────────────────────────
 export interface GameState {
   phase: GamePhase
@@ -229,5 +253,6 @@ export interface GameState {
   mapNodes: MapNode[]
   currentNodeId: string | null
   lastSpinResult: SpinResult | null
+  lastCombatReward: CombatReward | null
   meta: MetaProgress
 }

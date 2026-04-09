@@ -1,12 +1,28 @@
-import type { Enemy } from '@/types'
+import type { CSSProperties } from 'react'
+import { symbolIconById, zoneBackdropByZone } from '@/assets/pixelArt'
+import CombatVfxLayer from '@/components/CombatVfxLayer'
+import GameIcon from '@/components/GameIcon'
 import { useTranslation } from '@/i18n'
+import type { Enemy, SpinResult } from '@/types'
 import styles from './EnemyDisplay.module.css'
 
 interface EnemyDisplayProps {
   enemy: Enemy
+  combatPhase?: string
+  lastSpinResult?: SpinResult | null
 }
 
-export default function EnemyDisplay({ enemy }: EnemyDisplayProps) {
+const intentIconByType = {
+  physical: symbolIconById.dagger,
+  magical: symbolIconById.magic_scroll,
+  debuff: symbolIconById.poison_vial,
+} as const
+
+export default function EnemyDisplay({
+  enemy,
+  combatPhase = 'player_idle',
+  lastSpinResult = null,
+}: EnemyDisplayProps) {
   const currentPattern = enemy.attackPattern[enemy.patternIndex]
   const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100)
   const {
@@ -18,8 +34,21 @@ export default function EnemyDisplay({ enemy }: EnemyDisplayProps) {
 
   return (
     <div className={styles.wrap}>
-      <div className={`${styles.viewport} ${enemy.isBoss ? styles.bossViewport : ''}`}>
-        <span className={styles.icon}>{enemy.icon}</span>
+      <div
+        className={`${styles.viewport} ${enemy.isBoss ? styles.bossViewport : ''}`}
+        data-zone={enemy.zone}
+        data-phase={combatPhase}
+        style={{ '--enemy-backdrop': `url("${zoneBackdropByZone[enemy.zone]}")` } as CSSProperties}
+      >
+        <div className={styles.ambientGlow} aria-hidden="true" />
+        <div className={styles.ambientMist} aria-hidden="true" />
+        <div className={styles.stageShadow} aria-hidden="true" />
+        <CombatVfxLayer result={lastSpinResult} zone={enemy.zone} />
+        <GameIcon
+          icon={enemy.icon}
+          alt={localizeEnemyName(enemy)}
+          className={styles.icon}
+        />
         {enemy.statusEffects.length > 0 && (
           <div className={styles.statusBadges}>
             {enemy.statusEffects.map((statusEffect, index) => (
@@ -42,10 +71,20 @@ export default function EnemyDisplay({ enemy }: EnemyDisplayProps) {
 
       {currentPattern && (
         <div className={styles.nextAttack}>
-          <span className={styles.nextLabel}>{t('next_attack')}</span>
-          <span className={styles.attackType}>{localizeAttackType(currentPattern.type)}</span>
+          <span className={styles.intentBadge} data-attack={currentPattern.type}>
+            <GameIcon
+              icon={intentIconByType[currentPattern.type]}
+              alt={localizeAttackType(currentPattern.type)}
+              decorative
+              className={styles.intentIcon}
+            />
+          </span>
+          <div className={styles.attackCopy}>
+            <span className={styles.nextLabel}>{t('next_attack')}</span>
+            <span className={styles.attackType}>{localizeAttackType(currentPattern.type)}</span>
+            <span className={styles.attackDesc}>{localizeAttackDescription(currentPattern.description)}</span>
+          </div>
           <span className={styles.attackDmg}>-{currentPattern.damage}</span>
-          <span className={styles.attackDesc}>{localizeAttackDescription(currentPattern.description)}</span>
         </div>
       )}
     </div>

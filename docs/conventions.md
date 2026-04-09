@@ -1,190 +1,150 @@
 # Conventions: Slot & Dungeons TMA
 
-> Правила разработки для code-ассистента. Дополняют `vision.md`, не дублируют его.
+> Правила разработки для code-ассистента.
+> Этот документ не спорит с `mechanics.md`, а помогает безопасно реализовывать его.
 
-## ⚠️ Обязательные референсы
+## Обязательные референсы
 
-Перед любой работой — прочитать и строго соблюдать:
+Перед любой работой — прочитать и соблюдать:
 
 | Документ | Что регулирует |
 |----------|---------------|
-| [`mechanics.md`](mechanics.md) | Игровые механики оригинала. Не изобретать — только реализовывать по нему |
-| [`design-system.md`](design-system.md) | Визуальный стиль: палитра, CSS, анимации, запреты |
+| [`mechanics.md`](mechanics.md) | Актуальный source of truth по игровому loop и математике боя |
+| [`design-system.md`](design-system.md) | Подача автомата, tavern atmosphere, pixel UI, анимации и запреты |
+| [`tasklist.md`](tasklist.md) | Текущий roadmap и порядок реализации |
+| [`workflow.md`](workflow.md) | Правила согласования итераций |
 
-**Приоритет:** `mechanics.md` и `design-system.md` > всё остальное.
+**Приоритет:** `mechanics.md` > `design-system.md` > `tasklist.md` > текущее состояние кода.
 
 ---
 
 ## Структура проекта
 
-```
+```text
 src/
-  components/       # React-компоненты (SlotMachine, DungeonGrid, CharacterCard...)
-  store/            # Zustand-сторы (gameStore, characterStore, symbolStore)
-  game/             # Чистая игровая логика (без React)
-    engine.ts       # Основной движок: спин слота, размещение символов, бой
-    symbols.ts      # Данные всех символов
-    characters.ts   # Данные персонажей
-    dungeon.ts      # Генерация этажей
+  components/       # UI автомата: SlotMachine, SlotReel, EnemyDisplay, QTEBar...
+  screens/          # экраны flow: Start, StartSymbols, Combat, Shop, WorldMap, Meta
+  store/            # Zustand store для состояния рана и меты
+  game/             # чистая игровая логика без React/store
+    slotGenerator.ts
+    resolution.ts
+    symbols.ts
+    synergies.ts
+    enemies.ts
+    worldMap.ts
+  hooks/            # orchestration hooks уровня экрана
   types/            # TypeScript интерфейсы
-  hooks/            # Кастомные хуки (useGame, useSlot, useCombat)
-  assets/           # Спрайты, иконки (пиксель-арт)
-  styles/           # Глобальные CSS-переменные, pixel-шрифты
-  constants/        # Константы баланса (урон, HP, шансы выпадения)
+  assets/           # пиксельные SVG / арты / иконки
+  styles/           # CSS variables и глобальные pixel utility styles
+  constants/        # баланс, тайминги, caps, конфиг UX
 ```
 
 ---
 
 ## TypeScript
 
-- **НЕ** использовать `any` — использовать `unknown` + type guard или конкретные типы
-- Все типы — в `src/types/`, экспортировать именованно
-- `as const` для всех константных объектов и массивов
-- Строгий режим (`"strict": true` в tsconfig)
-- Предпочитать `interface` над `type` для объектов данных; `type` — для union/intersection
+- **Не** использовать `any`
+- Все типы держать в `src/types/`
+- Использовать `as const` для константных структур
+- Держать строгий режим TypeScript
+- Предпочитать `interface` для объектов данных
 
 ---
 
 ## React-компоненты
 
 - Максимум **150 строк** на файл компонента
-- **НЕ** смешивать игровую логику с компонентами — только вызовы хуков и store
-- **НЕ** использовать inline-styles — только CSS-модули или Tailwind-классы
-- Каждый компонент — в отдельной папке с `index.tsx` (и `.module.css` при необходимости)
-- Props типизировать через `interface ComponentNameProps`
-
-```
-components/
-  SlotMachine/
-    index.tsx
-    SlotMachine.module.css
-  DungeonGrid/
-    index.tsx
-    DungeonGrid.module.css
-```
+- Игровая логика не живет в React-компонентах
+- Не использовать inline-styles
+- Каждый компонент держать в отдельной папке с `index.tsx`
+- Props типизировать через `interface`
 
 ---
 
-## Игровая логика (src/game/)
+## Игровая логика (`src/game/`)
 
-- Только **чистые функции** — никаких React-хуков, никакого store
-- Входные данные → вычисление → возвращаемый результат
-- Функции должны быть тестируемы через Vitest без рендера компонентов
-- **НЕ** хардкодить числа — только через `src/constants/`
-
-```typescript
-// ✅ Правильно
-import { COMBAT } from '@/constants/balance'
-export function calcDamage(attack: number, defense: number): number {
-  return Math.max(COMBAT.MIN_DAMAGE, attack - defense)
-}
-
-// ❌ Неправильно
-export function calcDamage(attack: number, defense: number): number {
-  return Math.max(1, attack - defense) // хардкод!
-}
-```
+- Только **чистые функции**
+- Без React-хуков
+- Без импорта Zustand store
+- Входные данные → вычисление → результат
+- Логику spin / stop / combat math / statuses / economy держать здесь или в typed orchestration-слое, а не в JSX
+- Не хардкодить баланс, использовать `src/constants/`
 
 ---
 
 ## Zustand Store
 
-- Один store = одна ответственность (game / character / symbol)
-- Мутации только через actions, определённые в store
-- **НЕ** вызывать `getState()` напрямую в компонентах — только через хуки-селекторы
-
-```typescript
-// ✅ Правильно
-const hp = useGameStore((s) => s.player.hp)
-
-// ❌ Неправильно
-const { player } = useGameStore() // лишние ре-рендеры
-```
+- Один store = одна ответственность
+- Изменения только через actions
+- Не тянуть `getState()` в компоненты напрямую
+- Store хранит состояние и переходы фаз, но не должен подменять `src/game/` как вычислительный слой
 
 ---
 
 ## Константы баланса
 
-Все игровые цифры — в `src/constants/`:
+Все игровые цифры должны жить в `src/constants/`:
 
-```
-constants/
-  balance.ts    # HP, урон, XP
-  config.ts     # размер сетки, этажи, задержки
-  rarity.ts     # веса редкостей
-```
-
-**НЕ** менять баланс внутри компонентов или game-функций напрямую.
-
----
-
-## Дизайн-система (Dark Fantasy Pixel)
-
-### CSS-переменные (src/styles/variables.css)
-
-```css
-:root {
-  --color-bg: #0d0d0f;
-  --color-surface: #1a1a2e;
-  --color-border: #4a3728;
-  --color-accent: #c8a96e;
-  --color-danger: #c0392b;
-  --color-spell: #7b68ee;
-  --color-item: #27ae60;
-  --color-enemy: #e74c3c;
-  --color-text: #e8d5b7;
-  --color-text-muted: #666666;
-}
-```
-
-### Шрифт
-
-- **Press Start 2P** (Google Fonts) — заголовки, числа, UI-элементы
-- Подключается в `index.html` через `<link>`, не через JavaScript
-
-### Размеры
-
-- Ячейка сетки: `48×48px`
-- Анимация слота: `steps(8)` в CSS keyframes
-- Shake: `@keyframes shake`, duration `100ms`, 3 итерации
+- caps
+- урон
+- HP
+- шансовые веса
+- цены магазина
+- тайминги skill check
+- assist windows
 
 ---
 
-## Типы данных — строго соблюдать
+## Типы данных — ориентир
 
-```typescript
-interface Symbol {
+```ts
+interface GameSymbol {
   id: string
-  type: 'spell' | 'item' | 'enemy'
   name: string
-  icon: string        // emoji или путь к спрайту
   rarity: 'common' | 'rare' | 'epic'
+  tags: string[]
   effect: SymbolEffect
 }
 
-interface GameState {
-  phase: 'character_select' | 'spinning' | 'floor' | 'combat' | 'upgrade' | 'game_over' | 'victory'
-  currentFloor: number
-  player: PlayerState
-  grid: GridCell[][]  // 5×5 сетка этажа
-  symbols: Symbol[]   // Колода игрока
-  activeEnemies: Enemy[]
+interface Reel {
+  symbolPool: WeightedSymbol[]
 }
+
+interface Player {
+  hp: number
+  maxHp: number
+  armor: number
+  reels: Reel[]
+  tokens: number
+  bombCharge: number
+}
+
+type GamePhase =
+  | 'meta_menu'
+  | 'start_symbols'
+  | 'world_map'
+  | 'combat_start'
+  | 'player_spin'
+  | 'resolving'
+  | 'enemy_action'
+  | 'post_combat'
+  | 'shop'
+  | 'game_over'
+  | 'run_complete'
 ```
 
 ---
 
 ## Именование
 
-| Что               | Стиль           | Пример                    |
-|-------------------|-----------------|---------------------------|
-| Компоненты        | PascalCase      | `SlotMachine`, `HPBar`    |
-| Файлы компонентов | PascalCase      | `SlotMachine.tsx`         |
-| Хуки              | camelCase + use | `useGame`, `useCombat`    |
-| Store             | camelCase       | `gameStore`, `useGameStore` |
-| Константы         | UPPER_SNAKE     | `MAX_HP`, `GRID_SIZE`     |
-| Типы/интерфейсы   | PascalCase      | `GameState`, `Symbol`     |
-| CSS-классы        | camelCase (модули) | `slotReel`, `gridCell` |
+| Что | Стиль | Пример |
+|-----|-------|--------|
+| Компоненты | PascalCase | `SlotMachine`, `EnemyDisplay` |
+| Хуки | camelCase + use | `useCombatFlow` |
+| Store | camelCase | `gameStore`, `useGameStore` |
+| Константы | UPPER_SNAKE | `MAX_REELS`, `MAX_TOKENS` |
+| Типы | PascalCase | `Player`, `Enemy`, `GamePhase` |
+| CSS-классы | camelCase | `slotReel`, `stopButton` |
 
 ---
 
@@ -192,29 +152,32 @@ interface GameState {
 
 - ❌ `any` в TypeScript
 - ❌ Игровая логика внутри React-компонентов
-- ❌ Inline-styles (`style={{ color: 'red' }}`)
+- ❌ Inline-styles
 - ❌ Монолитные компоненты > 150 строк
 - ❌ Хардкод баланса в компонентах
-- ❌ `console.log` в продакшн-коде (только через `logger.ts` с проверкой `isDev`)
-- ❌ Импорты store напрямую в `src/game/` (только чистые функции)
+- ❌ Импорты store напрямую в `src/game/`
+- ❌ Auto-stop как игровая логика по умолчанию
+- ❌ `initial shop` перед первым боем
+- ❌ Возврат к dungeon-grid как core gameplay surface
 
 ---
 
 ## Git
 
-```
-feat: итерация N — [описание что сделано]
-fix: [что исправлено]
-refactor: [что переработано]
-docs: [обновление документации]
+```text
+feat: итерация N — новая функциональность
+fix: исправление
+refactor: структурная переработка
+docs: обновление документации
 ```
 
-Коммит после каждой завершённой итерации согласно `doc/workflow.md`.
+Коммит делается только после завершенной и подтвержденной итерации по `workflow.md`.
 
 ---
 
-## 💻 Команды терминала (Консоль Windows)
+## Команды терминала
 
-- **ENV: Windows**. Всегда используйте префикс `cmd /c` для любых консольных команд, чтобы процесс корректно завершался и отправлял сигнал EOF.
-- **Пример**: Использовать `cmd /c npm run build` вместо просто `npm run build`.
-- **Запрещено** зависать в интерактивных консолях. Любая команда должна выполняться и автоматически завершаться (поэтому используем `cmd /c`).
+- Среда: Windows
+- Для консольных команд использовать `cmd /c ...`
+- Не зависать в интерактивных процессах
+- Любая проверка должна запускаться и завершаться автоматически

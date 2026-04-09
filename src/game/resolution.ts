@@ -1,11 +1,10 @@
-import type { Enemy, GameSymbol, Player, QTEResult, SpinResult, Synergy } from '@/types'
+import type { GameSymbol, Player, QTEResult, SpinResult, Synergy } from '@/types'
 import { detectSynergies } from './synergies'
 
 export function resolveSymbols(
   symbols: GameSymbol[],
   qte: QTEResult,
   player: Player,
-  _enemy: Enemy,
 ): SpinResult {
   const physicalStrengthRanks = player.metaModifiers
     .filter((modifier) => modifier.id === 'physical_strength')

@@ -1,6 +1,5 @@
 const isDev = import.meta.env.DEV
 
-/* eslint-disable no-console */
 export const gameLog = {
   spin: (count: number) =>
     isDev && console.log('[SPIN] symbols placed:', count),

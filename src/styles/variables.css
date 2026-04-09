@@ -7,6 +7,9 @@
   --color-bg: #0d0d0f;
   --color-surface: #1a1a2e;
   --color-surface-2: #16213e;
+  --color-surface-3: #101826;
+  --color-panel: rgba(18, 18, 30, 0.92);
+  --color-panel-strong: rgba(10, 10, 16, 0.96);
   --color-border: #4a3728;
   --color-border-bright: #6b5240;
   --color-accent: #c8a96e;
@@ -18,10 +21,15 @@
   --color-item: #27ae60;
   --color-item-bright: #2ecc71;
   --color-enemy: #e74c3c;
+  --color-info: #60b8e8;
+  --color-text: #efe5d5;
   --color-text-muted: #b5a89d;
+  --color-text-dim: #7f7488;
   --color-hp: #e74c3c;
   --color-hp-low: #c0392b;
   --color-xp: #f39c12;
+  --color-success: #4caf6e;
+  --color-shadow: rgba(0, 0, 0, 0.48);
 
   /* === Typography === */
   --font-pixel: 'Press Start 2P', monospace;
@@ -30,6 +38,13 @@
   /* === Sizes === */
   --cell-size: 48px;
   --border-width: 2px;
+  --touch-target: 44px;
+  --panel-shadow:
+    0 0 0 1px rgba(107, 82, 64, 0.35) inset,
+    0 18px 32px var(--color-shadow);
+  --panel-shadow-tight:
+    0 0 0 1px rgba(107, 82, 64, 0.28) inset,
+    0 10px 20px rgba(0, 0, 0, 0.32);
   --radius: 0px; /* pixel style — no border radius */
 
   /* === Z-index === */

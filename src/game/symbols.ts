@@ -1,12 +1,15 @@
+import { symbolIconById } from '@/assets/pixelArt'
 import type { GameSymbol, WeightedSymbol, Reel } from '@/types'
 
-// ── Symbol definitions ────────────────────────────────────
-// Damage comes ONLY from symbols — NO player.attack
+// Symbol definitions
+// Damage comes ONLY from symbols - NO player.attack
+
+export const BASE_STARTER_SYMBOL_IDS = ['dagger', 'shield', 'coin'] as const
 
 const DAGGER: GameSymbol = {
   id: 'dagger',
   name: 'Dagger',
-  icon: '🗡️',
+  icon: symbolIconById.dagger,
   type: 'damage',
   rarity: 'common',
   level: 1,
@@ -17,7 +20,7 @@ const DAGGER: GameSymbol = {
 const SHIELD_SYM: GameSymbol = {
   id: 'shield',
   name: 'Shield',
-  icon: '🛡️',
+  icon: symbolIconById.shield,
   type: 'defense',
   rarity: 'common',
   level: 1,
@@ -28,7 +31,7 @@ const SHIELD_SYM: GameSymbol = {
 const COIN: GameSymbol = {
   id: 'coin',
   name: 'Coin',
-  icon: '🪙',
+  icon: symbolIconById.coin,
   type: 'economy',
   rarity: 'common',
   level: 1,
@@ -39,18 +42,18 @@ const COIN: GameSymbol = {
 const ENERGIZER: GameSymbol = {
   id: 'energizer',
   name: 'Energizer',
-  icon: '⚡',
+  icon: symbolIconById.energizer,
   type: 'damage',
   rarity: 'rare',
   level: 1,
   tags: ['magic'],
-  effect: { magicDamage: 15 }, // bypasses enemy armor
+  effect: { magicDamage: 15 },
 }
 
 const BOMB: GameSymbol = {
   id: 'bomb',
   name: 'Bomb',
-  icon: '💣',
+  icon: symbolIconById.bomb,
   type: 'damage',
   rarity: 'epic',
   level: 1,
@@ -61,7 +64,7 @@ const BOMB: GameSymbol = {
 const DIAMOND: GameSymbol = {
   id: 'diamond',
   name: 'Diamond',
-  icon: '💎',
+  icon: symbolIconById.diamond,
   type: 'special',
   rarity: 'epic',
   level: 1,
@@ -72,7 +75,7 @@ const DIAMOND: GameSymbol = {
 const POISON_VIAL: GameSymbol = {
   id: 'poison_vial',
   name: 'Poison Vial',
-  icon: '🧪',
+  icon: symbolIconById.poison_vial,
   type: 'special',
   rarity: 'rare',
   level: 1,
@@ -83,7 +86,7 @@ const POISON_VIAL: GameSymbol = {
 const MAGIC_SCROLL: GameSymbol = {
   id: 'magic_scroll',
   name: 'Magic Scroll',
-  icon: '📜',
+  icon: symbolIconById.magic_scroll,
   type: 'special',
   rarity: 'rare',
   level: 1,
@@ -91,12 +94,29 @@ const MAGIC_SCROLL: GameSymbol = {
   effect: { magicDamage: 12 },
 }
 
-// All available symbols (Initial Shop pool)
+const HEALTH_POTION: GameSymbol = {
+  id: 'health_potion',
+  name: 'Health Potion',
+  icon: symbolIconById.health_potion,
+  type: 'special',
+  rarity: 'common',
+  level: 1,
+  tags: ['heal', 'magic'],
+  effect: { heal: 15 },
+}
+
 export const ALL_SYMBOLS: GameSymbol[] = [
-  DAGGER, SHIELD_SYM, COIN, ENERGIZER, BOMB, DIAMOND, POISON_VIAL, MAGIC_SCROLL,
+  DAGGER,
+  SHIELD_SYM,
+  COIN,
+  ENERGIZER,
+  BOMB,
+  DIAMOND,
+  POISON_VIAL,
+  MAGIC_SCROLL,
+  HEALTH_POTION,
 ]
 
-// Starter reels (3 reels, common-weighted)
 export const STARTER_REELS: Reel[] = [
   {
     id: 'reel_1',

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import type { EventParams, SafeAreaInset, Telegram, WebApp as TelegramWebApp } from '@twa-dev/types'
+import type { SafeAreaInset, Telegram, WebApp as TelegramWebApp } from '@twa-dev/types'
 import App from './App'
 import './styles/global.css'
 import { haptics } from '@/utils/haptics'
@@ -74,7 +74,7 @@ try {
     syncViewport()
     scheduleViewportSync(tg)
   }
-  const handleFullscreenFailed = (_params: EventParams['fullscreenFailed']) => {
+  const handleFullscreenFailed = () => {
     tg.expand()
     syncViewport()
   }

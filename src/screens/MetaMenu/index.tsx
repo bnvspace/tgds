@@ -53,7 +53,7 @@ export default function MetaMenu() {
   const startRun = useGameStore((s) => s.startRun)
   const setPhase = useGameStore((s) => s.setPhase)
   const store = useGameStore()
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
 
   const [localMods, setLocalMods] = useState(() =>
     Object.fromEntries(MODIFIERS.map((m) => [
@@ -62,6 +62,13 @@ export default function MetaMenu() {
     ]))
   )
   const [localChips, setLocalChips] = useState(meta.totalChips)
+
+  const allocatedCount = Object.values(localMods).reduce((sum, value) => sum + value, 0)
+  const textLocale = lang === 'ru' ? 'ru-RU' : 'en-US'
+
+  function menuCaps(value: string) {
+    return value.toLocaleUpperCase(textLocale)
+  }
 
   function allocate(id: ModifierId, cost: number, max: number) {
     const current = localMods[id] ?? 0
@@ -105,14 +112,23 @@ export default function MetaMenu() {
       <div className={styles.header}>
         <button
           className={styles.backBtn}
-          onClick={() => { playButtonSFX(); setPhase('meta_menu') }}
+          onClick={() => {
+            playButtonSFX()
+            setPhase('meta_menu')
+          }}
         >
           {t('back')}
         </button>
-        <h2 className={styles.title}>{t('modifiers_title')}</h2>
-        <span className={styles.chips}>
-          {localChips} {t('chips')}
-        </span>
+
+        <div className={styles.headerCopy}>
+          <h2 className={styles.title}>{menuCaps(t('modifiers_title'))}</h2>
+          <div className={styles.summaryRow}>
+            <span className={styles.summaryChip}>
+              {localChips} {t('chips')}
+            </span>
+            <span className={styles.summaryChip}>x{allocatedCount}</span>
+          </div>
+        </div>
       </div>
 
       <div className={styles.list}>
@@ -122,11 +138,26 @@ export default function MetaMenu() {
           return (
             <div key={mod.id} className={styles.modCard}>
               <span className={styles.modIcon}>{mod.icon}</span>
+
               <div className={styles.modInfo}>
-                <span className={styles.modName}>{t(mod.nameKey)}</span>
+                <span className={styles.modName}>{menuCaps(t(mod.nameKey))}</span>
                 <span className={styles.modDesc}>{t(mod.descKey)}</span>
-                <span className={styles.modCost}>{mod.chipsCost} · {t('max_label')} {mod.max}</span>
+                <div className={styles.modFooter}>
+                  <span className={styles.modCost}>
+                    {mod.chipsCost} · {t('max_label')} {mod.max}
+                  </span>
+                  <div className={styles.rankDots}>
+                    {Array.from({ length: mod.max }, (_, index) => (
+                      <span
+                        key={`${mod.id}-${index}`}
+                        className={styles.rankDot}
+                        data-active={index < count ? 'true' : 'false'}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
+
               <div className={styles.modControls}>
                 <button
                   className={styles.ctrlBtn}
@@ -150,7 +181,11 @@ export default function MetaMenu() {
       </div>
 
       <div className={styles.footer}>
-        <button className={styles.refundBtn} onClick={refundAll}>
+        <button
+          className={styles.refundBtn}
+          onClick={refundAll}
+          disabled={allocatedCount === 0}
+        >
           {t('reset_all')}
         </button>
         <button className={styles.startBtn} onClick={handleStart}>

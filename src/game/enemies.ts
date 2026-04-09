@@ -1,21 +1,20 @@
+import { enemyPortraitById } from '@/assets/pixelArt'
 import type { Enemy, ZoneType } from '@/types'
 
-// ── Enemy library ─────────────────────────────────────────
+// Enemy library
 // Each enemy has a deterministic attackPattern (cycles, not random)
-// Enemies are significantly buffed to provide meaningful challenge
 
-// ── SWAMP ZONE ────────────────────────────────────────────
 export const SWAMP_ENEMIES: Enemy[] = [
   {
     id: 'bog_slime',
     name: 'Bog Slime',
-    icon: '🟢',
+    icon: enemyPortraitById.bog_slime,
     zone: 'swamp',
     hp: 80,
     maxHp: 80,
     attackPattern: [
       { damage: 14, type: 'magical', description: 'Acid splash' },
-      { damage: 10, type: 'debuff',  description: 'Poison coat' },
+      { damage: 10, type: 'debuff', description: 'Poison coat' },
       { damage: 18, type: 'magical', description: 'Corrosive vomit' },
     ],
     patternIndex: 0,
@@ -26,7 +25,7 @@ export const SWAMP_ENEMIES: Enemy[] = [
   {
     id: 'swamp_witch',
     name: 'Swamp Witch',
-    icon: '🧙',
+    icon: enemyPortraitById.swamp_witch,
     zone: 'swamp',
     hp: 100,
     maxHp: 100,
@@ -34,7 +33,7 @@ export const SWAMP_ENEMIES: Enemy[] = [
       { damage: 16, type: 'magical', description: 'Hex bolt' },
       { damage: 12, type: 'physical', description: 'Staff jab' },
       { damage: 22, type: 'magical', description: 'Poison nova' },
-      { damage: 8, type: 'debuff', description: 'Curse — weaken' },
+      { damage: 8, type: 'debuff', description: 'Curse - weaken' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -44,16 +43,16 @@ export const SWAMP_ENEMIES: Enemy[] = [
   {
     id: 'vine_horror',
     name: 'Vine Horror',
-    icon: '🌿',
+    icon: enemyPortraitById.vine_horror,
     zone: 'swamp',
     hp: 145,
     maxHp: 145,
     attackPattern: [
       { damage: 16, type: 'physical', description: 'Vine whip' },
       { damage: 12, type: 'physical', description: 'Thorn strike' },
-      { damage: 0,  type: 'debuff',  description: 'Root — stagger' },
+      { damage: 0, type: 'debuff', description: 'Root - stagger' },
       { damage: 22, type: 'physical', description: 'Crush' },
-      { damage: 10, type: 'magical',  description: 'Spore burst' },
+      { damage: 10, type: 'magical', description: 'Spore burst' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -62,19 +61,18 @@ export const SWAMP_ENEMIES: Enemy[] = [
   },
 ]
 
-// ── SEWER ZONE ────────────────────────────────────────────
 export const SEWER_ENEMIES: Enemy[] = [
   {
     id: 'hammer_goblin',
     name: 'Hammer Goblin',
-    icon: '👺',
+    icon: enemyPortraitById.hammer_goblin,
     zone: 'sewer',
     hp: 120,
     maxHp: 120,
     attackPattern: [
       { damage: 20, type: 'physical', description: 'Hammer swing' },
       { damage: 14, type: 'physical', description: 'Quick jab' },
-      { damage: 18, type: 'magical',  description: 'Poison spit' },
+      { damage: 18, type: 'magical', description: 'Poison spit' },
       { damage: 25, type: 'physical', description: 'Ground smash' },
     ],
     patternIndex: 0,
@@ -85,14 +83,14 @@ export const SEWER_ENEMIES: Enemy[] = [
   {
     id: 'sewer_rat_king',
     name: 'Rat King',
-    icon: '🐀',
+    icon: enemyPortraitById.sewer_rat_king,
     zone: 'sewer',
     hp: 110,
     maxHp: 110,
     attackPattern: [
       { damage: 15, type: 'physical', description: 'Bite frenzy' },
       { damage: 15, type: 'physical', description: 'Bite frenzy' },
-      { damage: 12, type: 'debuff',  description: 'Disease — drain' },
+      { damage: 12, type: 'debuff', description: 'Disease - drain' },
       { damage: 20, type: 'physical', description: 'Swarm rush' },
     ],
     patternIndex: 0,
@@ -103,16 +101,16 @@ export const SEWER_ENEMIES: Enemy[] = [
   {
     id: 'iron_golem',
     name: 'Iron Golem',
-    icon: '🤖',
+    icon: enemyPortraitById.iron_golem,
     zone: 'sewer',
     hp: 250,
     maxHp: 250,
     attackPattern: [
       { damage: 30, type: 'physical', description: 'Slam' },
       { damage: 18, type: 'physical', description: 'Shockwave' },
-      { damage: 0,  type: 'debuff',  description: 'Block Reel 1' },
+      { damage: 0, type: 'debuff', description: 'Block Reel 1' },
       { damage: 40, type: 'physical', description: 'Overcharge crush' },
-      { damage: 22, type: 'magical',  description: 'Electric surge' },
+      { damage: 22, type: 'magical', description: 'Electric surge' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -121,20 +119,19 @@ export const SEWER_ENEMIES: Enemy[] = [
   },
 ]
 
-// ── CITADEL ZONE ─────────────────────────────────────────
 export const CITADEL_ENEMIES: Enemy[] = [
   {
     id: 'shadow_knight',
     name: 'Shadow Knight',
-    icon: '🗡️',
+    icon: enemyPortraitById.shadow_knight,
     zone: 'citadel',
     hp: 160,
     maxHp: 160,
     attackPattern: [
       { damage: 28, type: 'physical', description: 'Dark slash' },
-      { damage: 20, type: 'magical',  description: 'Soul drain' },
+      { damage: 20, type: 'magical', description: 'Soul drain' },
       { damage: 24, type: 'physical', description: 'Shadow lunge' },
-      { damage: 0,  type: 'debuff',  description: 'Darkness — blind' },
+      { damage: 0, type: 'debuff', description: 'Darkness - blind' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -144,15 +141,15 @@ export const CITADEL_ENEMIES: Enemy[] = [
   {
     id: 'lich',
     name: 'Lich',
-    icon: '💀',
+    icon: enemyPortraitById.lich,
     zone: 'citadel',
     hp: 140,
     maxHp: 140,
     attackPattern: [
-      { damage: 24, type: 'magical',  description: 'Frost bolt' },
-      { damage: 0,  type: 'debuff',  description: 'Freeze — miss auto' },
-      { damage: 32, type: 'magical',  description: 'Death coil' },
-      { damage: 18, type: 'magical',  description: 'Bone shard' },
+      { damage: 24, type: 'magical', description: 'Frost bolt' },
+      { damage: 0, type: 'debuff', description: 'Freeze - miss auto' },
+      { damage: 32, type: 'magical', description: 'Death coil' },
+      { damage: 18, type: 'magical', description: 'Bone shard' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -162,17 +159,17 @@ export const CITADEL_ENEMIES: Enemy[] = [
   {
     id: 'dark_overlord',
     name: 'Dark Overlord',
-    icon: '👑',
+    icon: enemyPortraitById.dark_overlord,
     zone: 'citadel',
     hp: 400,
     maxHp: 400,
     attackPattern: [
       { damage: 35, type: 'physical', description: 'Void strike' },
-      { damage: 28, type: 'magical',  description: 'Soul burst' },
-      { damage: 0,  type: 'debuff',  description: 'Block 2 reels' },
-      { damage: 45, type: 'magical',  description: 'Apocalypse' },
+      { damage: 28, type: 'magical', description: 'Soul burst' },
+      { damage: 0, type: 'debuff', description: 'Block 2 reels' },
+      { damage: 45, type: 'magical', description: 'Apocalypse' },
       { damage: 32, type: 'physical', description: 'Throne crush' },
-      { damage: 0,  type: 'debuff',  description: 'Dark shroud' },
+      { damage: 0, type: 'debuff', description: 'Dark shroud' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -207,8 +204,9 @@ function scaleEnemy(enemy: Enemy, worldTier: number): Enemy {
 
 export function getRandomEnemy(zone: ZoneType, bossOnly = false, worldTier = 0): Enemy {
   const pool = zone === 'swamp' ? SWAMP_ENEMIES
-    : zone === 'sewer' ? SEWER_ENEMIES : CITADEL_ENEMIES
-  const filtered = bossOnly ? pool.filter((e) => e.isBoss) : pool.filter((e) => !e.isBoss)
+    : zone === 'sewer' ? SEWER_ENEMIES
+      : CITADEL_ENEMIES
+  const filtered = bossOnly ? pool.filter((enemy) => enemy.isBoss) : pool.filter((enemy) => !enemy.isBoss)
   const enemy = filtered[Math.floor(Math.random() * filtered.length)]
   return scaleEnemy(enemy, worldTier)
 }

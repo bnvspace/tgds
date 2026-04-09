@@ -12,6 +12,12 @@
   --tg-content-safe-area-bottom: 0px;
   --tg-content-safe-area-left: 0px;
   --tg-content-safe-area-right: 0px;
+  --scrollbar-size: 10px;
+  --scrollbar-track: rgba(10, 10, 15, 0.88);
+  --scrollbar-track-border: rgba(61, 43, 31, 0.8);
+  --scrollbar-thumb: linear-gradient(180deg, rgba(200, 169, 110, 0.82), rgba(138, 112, 72, 0.92));
+  --scrollbar-thumb-border: rgba(28, 18, 12, 0.9);
+  --scrollbar-thumb-hover: linear-gradient(180deg, rgba(240, 208, 144, 0.92), rgba(160, 126, 70, 0.98));
 }
 
 @supports (height: 100svh) {
@@ -67,6 +73,35 @@ body {
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
   -webkit-user-select: none;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 169, 110, 0.82) rgba(10, 10, 15, 0.88);
+}
+
+*::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border: 1px solid var(--scrollbar-track-border);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 1px solid var(--scrollbar-thumb-border);
+  box-shadow: inset 0 0 0 1px rgba(255, 240, 210, 0.12);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
 }
 
 #root {

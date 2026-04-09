@@ -7,6 +7,30 @@ export interface LeaderboardEntry {
   completedAt: string | null
 }
 
+export interface TelegramUser {
+  id: number
+  first_name: string
+  username?: string
+}
+
+type TelegramWindow = Window & typeof globalThis & {
+  Telegram?: {
+    WebApp?: {
+      initDataUnsafe?: {
+        user?: unknown
+      }
+    }
+  }
+}
+
+function isTelegramUser(value: unknown): value is TelegramUser {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  return 'id' in value && 'first_name' in value
+}
+
 // Resolve API base URL: in production use current origin, locally mock
 const API_BASE = typeof window !== 'undefined'
   ? window.location.origin
@@ -22,11 +46,11 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   }
 }
 
-export async function registerUser(tgUser: {
-  id: number
-  first_name: string
-  username?: string
-}, score = 0, completedAt?: string): Promise<void> {
+export async function registerUser(
+  tgUser: TelegramUser,
+  score = 0,
+  completedAt?: string,
+): Promise<void> {
   try {
     const username = tgUser.username
       ? `@${tgUser.username}`
@@ -50,8 +74,8 @@ export async function registerUser(tgUser: {
 
 export function getTelegramUser() {
   try {
-    // @ts-ignore
-    return window.Telegram?.WebApp?.initDataUnsafe?.user ?? null
+    const candidate = (window as TelegramWindow).Telegram?.WebApp?.initDataUnsafe?.user
+    return isTelegramUser(candidate) ? candidate : null
   } catch {
     return null
   }

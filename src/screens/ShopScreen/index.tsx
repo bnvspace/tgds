@@ -1,12 +1,15 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { motion } from 'framer-motion'
+import { shopBackdrop, symbolIconById } from '@/assets/pixelArt'
+import GameIcon from '@/components/GameIcon'
 import { ALL_SYMBOLS } from '@/game/symbols'
-import { useGameStore } from '@/store/gameStore'
 import { useTranslation } from '@/i18n'
+import { useGameStore } from '@/store/gameStore'
 import type { GameSymbol } from '@/types'
-import styles from './ShopScreen.module.css'
 import { playButtonSFX, playCoinSFX } from '@/utils/audio'
 import { haptics } from '@/utils/haptics'
+import styles from './ShopScreen.module.css'
 
 const SYMBOL_COST: Record<string, number> = {
   common: 10,
@@ -30,12 +33,15 @@ export default function ShopScreen() {
     .filter((symbol) => meta.unlockedSymbolIds.includes(symbol.id))
     .slice(0, 4)
 
+  const activeSymbolsCount = player?.reels.reduce((sum, reel) => sum + reel.symbolPool.length, 0) ?? 0
+  const reelCount = player?.reels.length ?? 0
+
   function effectDescription(symbol: GameSymbol) {
     const { effect } = symbol
     const parts = []
 
     if (effect.damage) parts.push(`⚔ ${effect.damage * symbol.level} ${t('dmg')}`)
-    if (effect.magicDamage) parts.push(`✨ ${effect.magicDamage * symbol.level} ${t('magic')}`)
+    if (effect.magicDamage) parts.push(`✦ ${effect.magicDamage * symbol.level} ${t('magic')}`)
     if (effect.armor) parts.push(`🛡 +${effect.armor * symbol.level} ${t('armor')}`)
     if (effect.tokens) parts.push(`🪙 +${effect.tokens * symbol.level} ${t('tokens')}`)
     if (effect.heal) parts.push(`❤ +${effect.heal * symbol.level} ${t('heal')}`)
@@ -74,7 +80,7 @@ export default function ShopScreen() {
   }
 
   function heal() {
-    if (!player || player.tokens < 15) {
+    if (!player || player.tokens < 15 || player.hp >= player.maxHp) {
       return
     }
 
@@ -92,31 +98,57 @@ export default function ShopScreen() {
     setPhase('world_map')
   }
 
+  const screenStyle = {
+    '--shop-backdrop': `url("${shopBackdrop}")`,
+  } as CSSProperties
+
   return (
     <motion.div
       className={styles.screen}
+      style={screenStyle}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <div className={styles.header}>
-        <h2 className={styles.title}>🏪 {t('shop_title')}</h2>
-        <span className={styles.tokens}>🪙 {player?.tokens ?? 0}</span>
+        <div className={styles.headerCopy}>
+          <h2 className={styles.title}>{t('shop_title')}</h2>
+          <p className={styles.subtitle}>
+            {t('active_symbols')}: {activeSymbolsCount}
+          </p>
+        </div>
+
+        <div className={styles.headerStats}>
+          <span className={styles.statChip}>{t('tokens_short')} {player?.tokens ?? 0}</span>
+          <span className={styles.statChip}>{t('hp_label')} {player?.hp ?? 0}/{player?.maxHp ?? 0}</span>
+          <span className={styles.statChip}>{t('reel')} {reelCount}</span>
+        </div>
       </div>
 
       <div className={styles.activeSection}>
-        <div className={styles.activeSectionLabel}>{t('active_symbols')}</div>
-        <div className={styles.activeSymbols}>
-          {player?.reels.flatMap((reel) => reel.symbolPool).map((weightedSymbol, index) => (
-            <div
-              key={index}
-              className={styles.activeSymbolSlot}
-              title={localizeSymbolName(weightedSymbol.symbol)}
-            >
-              {weightedSymbol.symbol.icon}
+        {player?.reels.map((reel, reelIndex) => (
+          <div key={reel.id} className={styles.reelStrip}>
+            <span className={styles.reelStripLabel}>
+              {t('reel')} {reelIndex + 1}
+            </span>
+
+            <div className={styles.activeSymbols}>
+              {reel.symbolPool.map((weightedSymbol, index) => (
+                <div
+                  key={`${reel.id}-${weightedSymbol.symbol.id}-${index}`}
+                  className={styles.activeSymbolSlot}
+                  title={localizeSymbolName(weightedSymbol.symbol)}
+                >
+                  <GameIcon
+                    icon={weightedSymbol.symbol.icon}
+                    alt={localizeSymbolName(weightedSymbol.symbol)}
+                    className={styles.activeSymbolIcon}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       <div className={styles.tabs}>
@@ -128,7 +160,7 @@ export default function ShopScreen() {
             haptics.selectionChange()
           }}
         >
-          {t('upgrade_shop')}
+          {t('buy_tab')}
         </button>
         <button
           className={`${styles.tab} ${tab === 'remove' ? styles.tabActive : ''}`}
@@ -147,11 +179,25 @@ export default function ShopScreen() {
           <button
             className={`${styles.shopCard} ${styles.healCard}`}
             onClick={heal}
-            disabled={!player || player.tokens < 15}
+            disabled={!player || player.tokens < 15 || player.hp >= player.maxHp}
           >
-            <span className={styles.shopIcon}>❤</span>
-            <span className={styles.shopName}>{t('shop_heal')}</span>
-            <span className={styles.shopEffect}>+25 {t('hp_label')}</span>
+            <div className={styles.shopIconFrame}>
+              <GameIcon
+                icon={symbolIconById.health_potion}
+                alt={t('shop_heal')}
+                className={styles.shopIcon}
+              />
+            </div>
+            <div className={styles.shopCardBody}>
+              <div className={styles.shopMeta}>
+                <span className={styles.rarityBadge} data-rarity="common">
+                  {t('rarity_common')}
+                </span>
+                <span className={styles.typeBadge}>{t('heal')}</span>
+              </div>
+              <span className={styles.shopName}>{t('shop_heal')}</span>
+              <span className={styles.shopEffect}>+25 {t('hp_label')}</span>
+            </div>
             <span className={styles.shopCost}>🪙 15</span>
           </button>
 
@@ -164,12 +210,29 @@ export default function ShopScreen() {
               <button
                 key={symbol.id}
                 className={`${styles.shopCard} ${bought ? styles.bought : ''}`}
+                data-rarity={symbol.rarity}
                 onClick={() => buySymbol(symbol)}
                 disabled={!canAfford || bought}
               >
-                <span className={styles.shopIcon}>{symbol.icon}</span>
-                <span className={styles.shopName}>{localizeSymbolName(symbol)}</span>
-                <span className={styles.shopEffect}>{effectDescription(symbol)}</span>
+                <div className={styles.shopIconFrame}>
+                  <GameIcon
+                    icon={symbol.icon}
+                    alt={localizeSymbolName(symbol)}
+                    className={styles.shopIcon}
+                  />
+                </div>
+                <div className={styles.shopCardBody}>
+                  <div className={styles.shopMeta}>
+                    <span className={styles.rarityBadge} data-rarity={symbol.rarity}>
+                      {t(`rarity_${symbol.rarity}`)}
+                    </span>
+                    <span className={styles.typeBadge}>
+                      {t(`symbol_type_${symbol.type}`)}
+                    </span>
+                  </div>
+                  <span className={styles.shopName}>{localizeSymbolName(symbol)}</span>
+                  <span className={styles.shopEffect}>{effectDescription(symbol)}</span>
+                </div>
                 <span className={styles.shopCost}>
                   {bought ? `✓ ${t('added')}` : `🪙 ${cost}`}
                 </span>
@@ -183,8 +246,10 @@ export default function ShopScreen() {
         <div className={styles.removeSection}>
           <p className={styles.removeHint}>{t('remove_hint')}</p>
           {player?.reels.map((reel, reelIndex) => (
-            <div key={reelIndex} className={styles.reelGroup}>
-              <span className={styles.reelLabel}>{t('reel')} {reelIndex + 1}</span>
+            <div key={reel.id} className={styles.reelGroup}>
+              <span className={styles.reelLabel}>
+                {t('reel')} {reelIndex + 1}
+              </span>
               <div className={styles.reelSymbols}>
                 {reel.symbolPool.map((weightedSymbol, symbolIndex) => (
                   <button
@@ -194,7 +259,11 @@ export default function ShopScreen() {
                     disabled={reel.symbolPool.length <= 1}
                     title={`${t('remove_symbol')} ${localizeSymbolName(weightedSymbol.symbol)}`}
                   >
-                    {weightedSymbol.symbol.icon}
+                    <GameIcon
+                      icon={weightedSymbol.symbol.icon}
+                      alt={localizeSymbolName(weightedSymbol.symbol)}
+                      className={styles.removeIcon}
+                    />
                     <span className={styles.removeX}>✕</span>
                   </button>
                 ))}
@@ -205,7 +274,7 @@ export default function ShopScreen() {
       )}
 
       <button className={styles.proceedBtn} onClick={proceed}>
-        ▶ {t('continue')}
+        {'>'} {t('continue')}
       </button>
     </motion.div>
   )

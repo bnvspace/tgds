@@ -2,10 +2,20 @@
 // Deterministic sound generation for lightweight pixel-art aesthetics.
 
 let audioCtx: AudioContext | null = null
+type WindowWithWebkitAudio = Window & typeof globalThis & {
+  webkitAudioContext?: typeof AudioContext
+}
 
 function initContext() {
   if (!audioCtx) {
-    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const AudioContextCtor = window.AudioContext
+      ?? (window as WindowWithWebkitAudio).webkitAudioContext
+
+    if (!AudioContextCtor) {
+      return
+    }
+
+    audioCtx = new AudioContextCtor()
   }
   if (audioCtx.state === 'suspended') {
     audioCtx.resume()

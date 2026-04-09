@@ -1,246 +1,95 @@
-import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useGameStore } from '@/store/gameStore'
+import type { CSSProperties } from 'react'
+import { motion } from 'framer-motion'
+import { symbolIconById, zoneBackdropByZone } from '@/assets/pixelArt'
 import EnemyDisplay from '@/components/EnemyDisplay'
+import GameIcon from '@/components/GameIcon'
 import SlotMachine from '@/components/SlotMachine'
-import type { SlotMachineHandle } from '@/components/SlotMachine'
 import QTEBar from '@/components/QTEBar'
-import { spin, makeQTEResult, isJackpotSpin } from '@/game/slotGenerator'
-import { resolveSymbols } from '@/game/resolution'
-import { playButtonSFX, playCoinSFX, playErrorSFX, playHealSFX, playHitSFX, playShieldSFX } from '@/utils/audio'
-import { haptics } from '@/utils/haptics'
 import { useTranslation } from '@/i18n'
-import type { GameSymbol, QTETier } from '@/types'
+import { useCombatFlow } from '@/hooks/useCombatFlow'
 import styles from './CombatScreen.module.css'
 
-type CombatPhase = 'player_idle' | 'spinning' | 'qte_active' | 'resolving' | 'enemy_turn' | 'done'
-
-const ACTIVE_COMBAT_PHASES = new Set([
-  'combat_start',
-  'player_spin',
-  'resolving',
-  'enemy_action',
-  'turn_end',
-])
-
 export default function CombatScreen() {
-  const player = useGameStore((state) => state.player)
-  const currentEnemy = useGameStore((state) => state.currentEnemy)
-  const applySpinResult = useGameStore((state) => state.applySpinResult)
-  const applyDamageToEnemy = useGameStore((state) => state.applyDamageToEnemy)
-  const damagePlayer = useGameStore((state) => state.damagePlayer)
-  const advanceEnemyPattern = useGameStore((state) => state.advanceEnemyPattern)
-  const recordCombatVictory = useGameStore((state) => state.recordCombatVictory)
-  const setPhase = useGameStore((state) => state.setPhase)
-  const endRun = useGameStore((state) => state.endRun)
   const {
-    t,
-    localizeAttackDescription,
-    localizeAttackType,
-    localizeSynergyName,
-  } = useTranslation()
-
-  const slotRef = useRef<SlotMachineHandle>(null)
-  const pendingRef = useRef<GameSymbol[]>([])
-  const encounterRef = useRef<string | null>(null)
-  const hasPlayerActedRef = useRef(false)
-  const encounterTokenRef = useRef(0)
-
-  const [combatPhase, setCombatPhase] = useState<CombatPhase>('player_idle')
-  const [combatLog, setCombatLog] = useState<string[]>([t('combat_start')])
-  const [showFleeConfirm, setShowFleeConfirm] = useState(false)
-
-  const enemy = currentEnemy
-  const hpPercent = player ? (player.hp / player.maxHp) * 100 : 0
-
-  function log(message: string) {
-    setCombatLog((prev) => [...prev.slice(-5), message])
-  }
-
-  async function performEnemyTurn(encounterToken = encounterTokenRef.current) {
-    const liveState = useGameStore.getState()
-    const livePlayer = liveState.player
-    const liveEnemy = liveState.currentEnemy
-
-    if (!livePlayer || !liveEnemy) return
-    if (!hasPlayerActedRef.current) {
-      setCombatPhase('player_idle')
-      return
-    }
-
-    setCombatPhase('enemy_turn')
-    await new Promise((resolve) => setTimeout(resolve, 700))
-    const latestState = useGameStore.getState()
-    const activeEnemy = latestState.currentEnemy
-    if (
-      encounterToken !== encounterTokenRef.current ||
-      activeEnemy !== liveEnemy ||
-      !ACTIVE_COMBAT_PHASES.has(latestState.phase)
-    ) return
-
-    const pattern = liveEnemy.attackPattern[liveEnemy.patternIndex]
-    const attackType = pattern.type
-    const effectiveDamage = attackType === 'debuff'
-      ? pattern.damage
-      : Math.max(0, pattern.damage - livePlayer.armor)
-
-    damagePlayer(pattern.damage, attackType)
-    playErrorSFX()
-    haptics.damageTaken()
-    log(`${t('enemy_attack')}: ${localizeAttackDescription(pattern.description)} - ${pattern.damage} ${localizeAttackType(pattern.type)}`)
-    advanceEnemyPattern()
-
-    if (livePlayer.hp - effectiveDamage <= 0) {
-      log(t('you_died'))
-      haptics.defeat()
-      setCombatPhase('done')
-      setTimeout(() => setPhase('game_over'), 1200)
-      return
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 400))
-    if (encounterToken !== encounterTokenRef.current) return
-    setCombatPhase('player_idle')
-  }
-
-  useEffect(() => {
-    if (!player || !enemy) return
-
-    const encounterId = `${enemy.id}:${enemy.maxHp}`
-    if (encounterRef.current === encounterId) return
-
-    encounterRef.current = encounterId
-    encounterTokenRef.current += 1
-    pendingRef.current = []
-    hasPlayerActedRef.current = false
-    setShowFleeConfirm(false)
-    setCombatLog([t('combat_start')])
-    setCombatPhase('player_idle')
-  }, [player, enemy?.id, enemy?.maxHp, t])
-
-  async function resolveSpinOutcome(symbols: GameSymbol[], qteTier: QTETier | null) {
-    if (!player || !enemy) return
-
-    pendingRef.current = []
-    setCombatPhase('resolving')
-
-    const qte = makeQTEResult(qteTier ?? 'miss')
-    const result = resolveSymbols(symbols, qte, player, enemy)
-
-    applySpinResult(result)
-    applyDamageToEnemy(result.totalDamage)
-
-    if (result.totalDamage > 0) {
-      playHitSFX()
-      haptics.damageDealt()
-    }
-    if (result.totalArmor > 0) {
-      setTimeout(() => {
-        playShieldSFX()
-        haptics.shieldBlock()
-      }, 150)
-    }
-    if (result.totalTokens > 0) {
-      setTimeout(() => {
-        playCoinSFX()
-        haptics.coinPickup()
-      }, 300)
-    }
-    if (result.totalHeal > 0) {
-      setTimeout(() => {
-        playHealSFX()
-        haptics.heal()
-      }, 450)
-    }
-
-    const logLine = [
-      qteTier ? t(`qte_label_${qte.tier}`) : null,
-      result.synergiesActivated.length > 0
-        ? result.synergiesActivated.map((synergy) => localizeSynergyName(synergy)).join(', ')
-        : null,
-      result.totalDamage > 0 ? `${t('damage_short')} ${Math.round(result.totalDamage)}` : null,
-      result.totalArmor > 0 ? `${t('armor_short')} +${result.totalArmor}` : null,
-      result.totalTokens > 0 ? `${t('tokens_short')} +${result.totalTokens}` : null,
-      result.totalHeal > 0 ? `${t('heal_short')} +${result.totalHeal}` : null,
-    ].filter(Boolean).join('  ')
-
-    if (logLine) {
-      log(logLine)
-    }
-
-    if (enemy.hp - result.totalDamage <= 0) {
-      log(t('enemy_defeated'))
-      haptics.victory()
-      setCombatPhase('done')
-      setTimeout(() => {
-        recordCombatVictory(enemy)
-        setPhase('shop')
-      }, 1200)
-      return
-    }
-
-    await performEnemyTurn(encounterTokenRef.current)
-  }
-
-  async function handleSpin() {
-    if (!player || !enemy) return
-
-    if (combatPhase === 'spinning') {
-      slotRef.current?.stopNextReel()
-      return
-    }
-
-    if (combatPhase !== 'player_idle') return
-
-    hasPlayerActedRef.current = true
-    setCombatPhase('spinning')
-    log(t('spin_reels'))
-
-    const symbols = spin(player.reels)
-    pendingRef.current = symbols
-
-    if (slotRef.current) {
-      await slotRef.current.spinTo(symbols)
-    }
-
-    if (isJackpotSpin(symbols)) {
-      setCombatPhase('qte_active')
-      log(t('tap_qte'))
-      return
-    }
-
-    await resolveSpinOutcome(symbols, null)
-  }
-
-  async function handleQTEResult(tier: QTETier) {
-    if (!player || !enemy || pendingRef.current.length === 0) return
-
-    const symbols = pendingRef.current
-    await resolveSpinOutcome(symbols, tier)
-  }
-
-  function handleFlee() {
-    playButtonSFX()
-    haptics.rigid()
-    setShowFleeConfirm(true)
-  }
-
-  function confirmFlee() {
-    endRun(false)
-  }
-
-  function cancelFlee() {
-    playButtonSFX()
-    setShowFleeConfirm(false)
-  }
+    slotRef,
+    player,
+    enemy,
+    lastSpinResult,
+    combatPhase,
+    showFleeConfirm,
+    combatPrompt,
+    playerHpPercent,
+    canTriggerSpin,
+    canFlee,
+    qteSessionId,
+    handleSpin,
+    handleQTEResult,
+    handleFlee,
+    confirmFlee,
+    cancelFlee,
+  } = useCombatFlow()
+  const { t } = useTranslation()
 
   if (!player || !enemy) {
     return <div className={styles.screen} />
   }
 
+  const screenStyle = {
+    '--combat-backdrop': `url("${zoneBackdropByZone[enemy.zone]}")`,
+  } as CSSProperties
+
   return (
-    <div className={styles.screen}>
-      <EnemyDisplay enemy={enemy} />
+    <div className={styles.screen} style={screenStyle}>
+      <div className={styles.header}>
+        <div className={styles.headerCopy}>
+          <span className={styles.kicker}>{t('combat_start')}</span>
+          <span className={styles.promptChip} data-phase={combatPhase}>
+            {combatPrompt}
+          </span>
+        </div>
+        <button
+          className={styles.fleeBtn}
+          onClick={handleFlee}
+          disabled={!canFlee}
+        >
+          {t('flee')}
+        </button>
+      </div>
+
+      <EnemyDisplay
+        enemy={enemy}
+        combatPhase={combatPhase}
+        lastSpinResult={lastSpinResult}
+      />
+
+      <section className={styles.playerPanel}>
+        <div className={styles.playerPanelTop}>
+          <div className={styles.hpSummary}>
+            <span className={styles.playerLabel}>{t('hp_label')}</span>
+            <span className={styles.playerHpValues}>
+              {player.hp}/{player.maxHp}
+            </span>
+          </div>
+
+          <div className={styles.statChips}>
+            <span className={styles.statChip} data-tone="armor">
+              {t('armor_short')} {player.armor}
+            </span>
+            <span className={styles.statChip} data-tone="tokens">
+              {t('tokens_short')} {player.tokens}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.hpBar}>
+          <motion.div
+            className={styles.hpFill}
+            initial={false}
+            animate={{ width: `${playerHpPercent}%` }}
+            transition={{ duration: 0.4 }}
+          />
+        </div>
+      </section>
 
       {showFleeConfirm && (
         <div className={styles.fleeOverlay}>
@@ -259,65 +108,43 @@ export default function CombatScreen() {
         </div>
       )}
 
-      <div className={styles.playerBar}>
-        <div className={styles.playerBarTop}>
-          <span className={styles.playerLabel}>{t('hp_label')}</span>
-          <span className={styles.playerHpValues}>{player?.hp ?? 0}/{player?.maxHp ?? 100}</span>
-          <span className={styles.armorLabel}>{t('armor_short')} {player?.armor ?? 0}</span>
-          <span className={styles.tokensLabel}>{t('tokens_short')} {player?.tokens ?? 0}</span>
-        </div>
-        <div className={styles.hpBar}>
-          <motion.div
-            className={styles.hpFill}
-            initial={false}
-            animate={{ width: `${hpPercent}%` }}
-            transition={{ duration: 0.4 }}
-          />
-        </div>
-      </div>
-
-      <button
-        className={styles.fleeBtn}
-        onClick={handleFlee}
-        disabled={combatPhase !== 'player_idle' && combatPhase !== 'done'}
-      >
-        {t('flee')}
-      </button>
-
-      <AnimatePresence>
-        {(combatPhase === 'qte_active' || combatPhase === 'resolving') && (
-          <motion.div
-            initial={{ opacity: 0, scaleY: 0.8 }}
-            animate={{ opacity: 1, scaleY: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ transformOrigin: 'top' }}
-          >
-            <QTEBar active={combatPhase === 'qte_active'} onResult={handleQTEResult} />
-          </motion.div>
+      <div className={styles.qteDock}>
+        {(combatPhase === 'qte_active' || combatPhase === 'resolving') ? (
+          <div className={styles.qteWrap}>
+            <QTEBar
+              key={`qte-${qteSessionId}`}
+              active={combatPhase === 'qte_active'}
+              onResult={handleQTEResult}
+            />
+          </div>
+        ) : (
+          <div className={`${styles.qteWrap} ${styles.qteIdleWrap}`} aria-hidden="true">
+            <div className={styles.qteIdleBar}>
+              <div className={styles.qteIdleBackdrop} />
+              <div className={styles.qteIdleZone} data-tone="hit" />
+              <div className={styles.qteIdleZone} data-tone="crit" />
+              <div className={styles.qteIdleZone} data-tone="mega" />
+              <div className={styles.qteIdleSeal}>
+                <GameIcon
+                  icon={symbolIconById.diamond}
+                  alt=""
+                  decorative
+                  className={styles.qteIdleSealIcon}
+                />
+              </div>
+              <span className={styles.qteIdleHint}>{t('qte_wait_hint')}</span>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
-
-      <div className={styles.log}>
-        {combatLog.map((line, index) => (
-          <p
-            key={`${line}-${index}`}
-            className={styles.logLine}
-            style={{ color: index === combatLog.length - 1 ? '#c8a96e' : undefined }}
-          >
-            {line}
-          </p>
-        ))}
       </div>
 
-      {player && (
-        <SlotMachine
-          ref={slotRef}
-          reels={player.reels}
-          isSpinning={combatPhase === 'spinning'}
-          onSpin={handleSpin}
-          disabled={combatPhase !== 'player_idle' && combatPhase !== 'spinning'}
-        />
-      )}
+      <SlotMachine
+        ref={slotRef}
+        reels={player.reels}
+        isSpinning={combatPhase === 'spinning'}
+        onSpin={handleSpin}
+        disabled={!canTriggerSpin}
+      />
     </div>
   )
 }

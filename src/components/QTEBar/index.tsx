@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { symbolIconById } from '@/assets/pixelArt'
+import GameIcon from '@/components/GameIcon'
 import { haptics } from '@/utils/haptics'
 import { useTranslation } from '@/i18n'
 import type { QTETier } from '@/types'
@@ -51,13 +53,11 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
 
   useEffect(() => {
     if (!active) {
-      setResolved(false)
-      setFlash(null)
-      posRef.current = 0
-      setMarkerPos(0)
       return
     }
 
+    dirRef.current = 1
+    posRef.current = 0
     lastTimeRef.current = performance.now()
 
     function tick(time: number) {
@@ -119,6 +119,15 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
       aria-label={t('tap_qte')}
     >
       <div className={styles.bar}>
+        <div className={styles.barBackdrop} aria-hidden="true" />
+        <div className={styles.centerSeal} aria-hidden="true">
+          <GameIcon
+            icon={symbolIconById.diamond}
+            alt=""
+            decorative
+            className={styles.centerSealIcon}
+          />
+        </div>
         <div
           className={styles.zoneHit}
           style={{ left: `${ZONES.hit.start * 100}%`, width: `${(ZONES.hit.end - ZONES.hit.start) * 100}%` }}
@@ -135,17 +144,16 @@ export default function QTEBar({ active, onResult }: QTEBarProps) {
         {!flash && (
           <div className={styles.marker} style={{ left: `${markerPos * 100}%` }} />
         )}
-      </div>
 
-      {flash ? (
-        <div className={styles.flashLabel} style={{ color: flashColor[flash] }}>
-          {flashLabel[flash]}
+        <div
+          className={flash ? styles.flashLabel : styles.hint}
+          style={flash ? { color: flashColor[flash] } : undefined}
+        >
+          {flash
+            ? flashLabel[flash]
+            : (active ? t('qte_tap_hint') : t('qte_wait_hint'))}
         </div>
-      ) : (
-        <div className={styles.hint}>
-          {active ? t('qte_tap_hint') : t('qte_wait_hint')}
-        </div>
-      )}
+      </div>
     </div>
   )
 }

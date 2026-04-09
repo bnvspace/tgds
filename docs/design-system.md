@@ -1,232 +1,296 @@
 # Design System: Slot & Dungeons
 
-> Оригинальный визуальный стиль (MUC GAMES, 2025). Строго соблюдать. Пиксельный dark fantasy.
+> Визуальный ориентир для original-faithful прототипа.
+> Игра должна ощущаться как старый аркадный автомат в подпольной таверне, а не как абстрактный UI-дашборд.
 
 ---
 
 ## Общий стиль
 
-Ориентир: японский инди-пиксель-арт. Темнее чем Moonlighter/Luck Be a Landlord.  
-Похоже на: Shiren the Wanderer, Moonlighter, Luck Be a Landlord.  
-**border-radius: 0 везде без исключений.**
+Ориентир:
+
+- темный pixel-art fantasy
+- аркадный автомат из дерева, латуни и потертых панелей
+- стол таверны, карты, окурки, шум толпы за кадром
+- интерфейс встроен в корпус автомата
+
+Ближайшая ассоциация:
+
+- old arcade cabinet
+- tavern table prop
+- heavy pixel UI
+
+**`border-radius: 0` везде.**
+
+---
+
+## Ключевой визуальный тезис
+
+Игрок не должен смотреть на “просто меню”.
+
+Он должен смотреть на:
+
+- дисплей автомата
+- барабаны
+- вражескую панель над ними
+- кнопку `STOP` внизу
+- кошелек и pile of coins сбоку
 
 ---
 
 ## Цветовая палитра
 
 ```css
-/* Фоны */
---bg-primary: #0a0a0f;         /* главный фон */
---bg-surface: #12121e;         /* поверхности, карточки */
---bg-elevated: #1c1c2e;        /* панели, приподнятые элементы */
---bg-floor: #16140e;           /* клетки этажа */
+/* Базовые фоны */
+--bg-room: #0a0a0f;
+--bg-cabinet: #141119;
+--bg-screen: #1a1620;
+--bg-panel: #241d18;
+--bg-wood: #3b2416;
+--bg-felt: #1e2416;
 
-/* Границы */
---border-default: #3d2b1f;     /* основная рамка */
---border-active: #c8a96e;      /* активная/выбранная — золото */
---border-panel: #2a2a3e;       /* рамка панелей */
+/* Металл / рамки */
+--border-default: #3d2b1f;
+--border-brass: #b78a46;
+--border-bright: #f0d090;
+--shadow-hard: #000000;
 
 /* Акценты */
 --accent-gold: #c8a96e;
---accent-gold-bright: #f0d090;
+--accent-coin: #d9b44a;
+--accent-chip: #59b86d;
+--accent-danger: #d85858;
+--accent-magic: #7f6ad8;
 
-/* Типы символов */
---symbol-spell: #9b72cf;
---symbol-spell-bg: #1e0e3a;
---symbol-item: #4caf6e;
---symbol-item-bg: #0e2a16;
---symbol-enemy: #e05252;
---symbol-enemy-bg: #2a0e0e;
---symbol-relic: #e8a030;
---symbol-relic-bg: #2a1a00;
-
-/* HP / статусы */
---hp-fill: #e05252;
---hp-bg: #2a0e0e;
---xp-fill: #4caf6e;
+/* Статусы */
+--status-poison: #8a5fd1;
+--status-stun: #f0d090;
 --status-freeze: #60b8e8;
---status-poison: #9b72cf;
---status-burn: #e87830;
+--status-heal: #5ec97f;
 ```
 
 ---
 
 ## Типографика
 
-**Только два шрифта:**
-1. **Press Start 2P** — ВСЕ заголовки, цифры, названия, кнопки
-2. **System UI / sans-serif** — только длинные описания (тултипы, описания эффектов)
+Разрешены только:
+
+1. `Press Start 2P` для заголовков, цифр, кнопок, стейтов, лейблов
+2. `system-ui, sans-serif` для длинных описаний
 
 | Элемент | Размер |
 |---------|--------|
 | Заголовок экрана | 12px |
 | Название символа | 8px |
-| Цифры (HP, урон) | 8px |
+| Цифры HP / Armor / Coins | 8px |
 | Кнопки | 8px |
-| Маленький текст | 6px |
-
-`letter-spacing: 0.05em` • `line-height: 1.8` для многострочного
+| Микротекст | 6px |
 
 ---
 
-## Сетка этажа (Floor Grid)
+## Компоновка экрана боя
 
-- Клетки: **48×48px** (scale через transform на маленьких экранах)
-- Сетка: **7 столбцов** × N рядов (адаптивно)
-- Пустая клетка: `background: #16140e`, `border: 1px solid #2a2010`, `border-radius: 0`
-- С символом: цветная рамка 2px по типу
-- С игроком: `border: 2px solid #c8a96e` + glow
-- Доступная для хода: pulse-анимация рамки
+Композиция должна быть такой:
 
-### Иконки в ячейке:
-- Размер: **32×32px** внутри 48×48px, flex-центрирование
-- Фон ячейки: `var(--symbol-*-bg)` по типу
+1. Верх: враг, его HP, intent, статусы
+2. Центр: окно автомата с барабанами
+3. Слева или рядом с барабанами: wallet / pile of coins
+4. Низ: большая `STOP`-кнопка под палец
+
+### Обязательные UX-правила
+
+- кнопка `STOP` визуально доминирует над второстепенными действиями
+- на мобильном она должна быть широкой и низко посаженной
+- stop chain должен считываться без объяснений
 
 ---
 
-## Пиксельные рамки (обязательно)
+## Пиксельные панели
 
 ```css
-/* Стандартная панель */
 .pixel-panel {
-  border: 2px solid #3d2b1f;
+  border: 2px solid var(--border-default);
+  background: var(--bg-screen);
   box-shadow:
-    inset -2px -2px 0 #1a0e06,
+    inset -2px -2px 0 #110c08,
     inset 2px 2px 0 #5a3d28,
-    4px 4px 0 #000000;
-  background: #12121e;
+    4px 4px 0 var(--shadow-hard);
   border-radius: 0;
 }
 
-/* Золотая панель */
-.pixel-panel--gold {
-  border-color: #c8a96e;
+.pixel-panel--brass {
+  border-color: var(--border-brass);
   box-shadow:
-    inset -2px -2px 0 #7a5a20,
-    inset 2px 2px 0 #f0d090,
-    4px 4px 0 #000000;
+    inset -2px -2px 0 #6d4d1a,
+    inset 2px 2px 0 var(--border-bright),
+    4px 4px 0 var(--shadow-hard);
 }
 ```
 
 ---
 
-## Анимация слота — строго через CSS steps()
+## Барабаны и анимация
+
+Анимация слота остается пиксельной и через `steps()`, но логика остановки только ручная.
 
 ```css
 @keyframes slot-spin {
   0%   { transform: translateY(0); }
   100% { transform: translateY(-480px); }
 }
-.slot-reel { animation: slot-spin 0.6s steps(10) infinite; }
-.slot-reel--stopping { animation: slot-stop 0.3s steps(5) forwards; }
+
+.slot-reel {
+  animation: slot-spin 0.6s steps(10) infinite;
+}
+
+.slot-reel--stopping {
+  animation: slot-stop 0.18s steps(4) forwards;
+}
 ```
 
-Задержки остановки барабанов:
-- Барабан 1: `0.8s`
-- Барабан 2: `1.2s`
-- Барабан 3: `1.6s`
-- Барабан 4: `2.0s`
-- Барабан 5: `2.4s`
+### Важно
 
-После остановки: flash весей сетки (`opacity 0→1`, `0.2s`).
+- нельзя проектировать интерфейс, который подразумевает автостоп
+- вспышка и звук должны происходить на каждом ручном stop
+- последний stop должен ощущаться тяжелее и значимее первых
+
+---
+
+## Кнопка STOP
+
+`STOP` — главный тактильный элемент интерфейса.
+
+```css
+.stopButton {
+  min-height: 56px;
+  width: 100%;
+  border: 2px solid var(--border-brass);
+  background: #3b1717;
+  color: #f4d7b0;
+  box-shadow:
+    inset -2px -2px 0 #240909,
+    inset 2px 2px 0 #7a3131,
+    4px 4px 0 var(--shadow-hard);
+  text-transform: uppercase;
+  font-family: 'Press Start 2P', monospace;
+}
+```
+
+Правила:
+
+- большая зона нажатия
+- не прятать в тулбар
+- не заменять маленькой secondary-кнопкой
+- можно усиливать hover/press через hard-shadow shift, но не через blur
 
 ---
 
 ## Карточки символов
 
+Карточки остаются компактными и пиксельными.
+
 ```css
 .symbol-card {
-  width: 48px; height: 48px;
-  border: 2px solid var(--border-по-типу);
-  background: var(--bg-по-типу);
-  box-shadow: inset -1px -1px 0 rgba(0,0,0,0.5), inset 1px 1px 0 rgba(255,255,255,0.1);
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--border-default);
+  background: var(--bg-panel);
+  box-shadow:
+    inset -1px -1px 0 rgba(0, 0, 0, 0.5),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.08);
   border-radius: 0;
-  cursor: pointer;
-}
-.symbol-card:hover {
-  border-color: #f0d090;
-  box-shadow: inset -1px -1px 0 rgba(0,0,0,0.5), inset 1px 1px 0 rgba(255,255,255,0.1),
-    0 0 8px rgba(200,169,110,0.4);
 }
 ```
 
-**Бейдж редкости** (правый верхний угол):
-- `common` — нет бейджа
-- `rare` — синяя точка 6px
-- `epic` — фиолетовая точка + pulse-анимация
+Редкость:
+
+- `common` = без сияния
+- `rare` = точка / небольшой цветовой маркер
+- `epic` = пульсирующий маркер, но без soft neon
 
 ---
 
-## HP Bar
+## HP / Armor / Coins
+
+Статы должны выглядеть как элементы автомата, а не как чистый HUD.
+
+### HP Bar
 
 ```css
-.hp-bar { height: 6px; background: #2a0e0e; border: 1px solid #3d1515; }
-.hp-bar__fill {
-  height: 100%; background: #e05252;
-  box-shadow: inset 0 1px 0 rgba(255,120,120,0.4);
-  transition: width 0.3s steps(6);
+.hpBar {
+  height: 6px;
+  background: #2a0e0e;
+  border: 1px solid #3d1515;
+}
+
+.hpBarFill {
+  height: 100%;
+  background: var(--accent-danger);
+  transition: width 0.25s steps(6);
 }
 ```
 
----
+### Coin Wallet
 
-## Кнопки
+Монеты отображаются:
 
-```css
-.btn-pixel {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 8px; color: #c8a96e;
-  background: #1c1c2e; border: 2px solid #c8a96e;
-  padding: 10px 16px; cursor: pointer;
-  border-radius: 0; box-shadow: 3px 3px 0 #000;
-  text-transform: uppercase; letter-spacing: 0.05em;
-  transition: none;
-}
-.btn-pixel:hover { background: #2a2a3e; box-shadow: 3px 3px 0 #000, 0 0 10px rgba(200,169,110,0.3); }
-.btn-pixel:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
-```
+- числом
+- кучкой/стеком/пачкой слева от барабанов
+
+Размер pile должен меняться визуально при росте кошелька.
 
 ---
 
-## Числа урона
+## Reward Juice
 
-```css
-@keyframes damage-float {
-  0%   { opacity: 1; transform: translateY(0) scale(1); }
-  50%  { opacity: 1; transform: translateY(-20px) scale(1.2); }
-  100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
-}
-.damage-number {
-  font-family: 'Press Start 2P', monospace; font-size: 10px;
-  color: #fff; text-shadow: 1px 1px 0 #e05252, -1px -1px 0 #e05252;
-  animation: damage-float 0.8s steps(8) forwards;
-  pointer-events: none; position: absolute; z-index: 100;
-}
-.damage-number--critical { color: #f0d090; font-size: 14px; }
-```
+После победы награды не должны “просто начисляться”.
+
+Нужно проектировать:
+
+- выстрел монет из левого лотка автомата
+- отдельный вылет green chips снизу
+- жесткие bounce-анимации
+- короткие металлические clink-звуки
 
 ---
 
-## Фоновый паттерн этажа
+## Аудиовизуальный фон
 
-```css
-.dungeon-bg {
-  background-color: #0a0a0f;
-  background-image:
-    repeating-linear-gradient(0deg, transparent, transparent 47px, #1a1a2a 47px, #1a1a2a 48px),
-    repeating-linear-gradient(90deg, transparent, transparent 47px, #1a1a2a 47px, #1a1a2a 48px);
-}
-```
+Обязательные направления:
+
+- тихий background crowd murmur
+- cheering на сильных комбо, crit и boss kill
+- crispy reel clicks
+- отдельный тяжелый sound на финальный stop
+- ретро “плинь” на монеты и редкие награды
 
 ---
 
-## Антипаттерны — строго запрещено
+## Shop Presentation
 
-- ❌ `border-radius > 2px` где угодно
-- ❌ Gradient-кнопки или ombre-эффекты
-- ❌ `box-shadow` с blur > 12px (только резкие тени)
-- ❌ `transition: all 0.3s ease` — только `steps()` или мгновенно
-- ❌ Шрифты кроме Press Start 2P для UI-элементов
-- ❌ Светлые фоны (#fff, #f0f0f0)
-- ❌ Tailwind `rounded-lg`, `shadow-lg` — заменять на `.pixel-panel`
-- ❌ Иконки из lucide/heroicons — только emoji или пиксельные SVG
+Магазин должен ощущаться как часть автомата и стола, а не как detached modal.
+
+Допустимо:
+
+- выдвижная панель
+- shop tray
+- cabinet drawer feel
+
+Недопустимо:
+
+- абстрактный белый popup
+- SaaS-карточки без материальности
+
+---
+
+## Антипаттерны
+
+- ❌ auto-stop как визуально подразумеваемый UX
+- ❌ dungeon grid / floor tiles как главный экран игры
+- ❌ clean sci-fi interface
+- ❌ мягкие modern rounded cards
+- ❌ `border-radius > 2px`
+- ❌ gradients и glassmorphism
+- ❌ blur-heavy shadows
+- ❌ светлые фоны
+- ❌ generic mobile game polish без ощущения старого автомата

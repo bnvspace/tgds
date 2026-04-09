@@ -9,8 +9,9 @@ export const CONFIG = {
   ENEMY_HP_SCALE: 1.2,   // +20% HP per floor
   BOSS_HP_MULTIPLIER: 3,
   UPGRADE_CHOICES: 3,
+  START_SYMBOL_COUNT: 3,
+  MAX_REELS: 5,
   SPIN_ANIM_MS: 2800,    // total spin animation duration
-  SPIN_COL_DELAY_MS: 400, // delay between column stops
 } as const
 
 export const RARITY_WEIGHTS = {

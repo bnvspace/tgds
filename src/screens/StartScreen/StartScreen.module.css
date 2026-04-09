@@ -1,110 +1,164 @@
 .screen {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   height: 100%;
   gap: 20px;
-  background-color: #0a0a0f;
-  padding: 24px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top center, rgba(123, 104, 238, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(10, 10, 15, 0.44), rgba(13, 13, 18, 0.74)),
+    var(--start-backdrop) center / cover no-repeat;
+  position: relative;
+}
+
+.heroPanel {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(18, 18, 30, 0.70), rgba(10, 10, 16, 0.82)),
+    var(--start-backdrop) center 20% / cover no-repeat;
+  border: 2px solid rgba(107, 82, 64, 0.6);
+  box-shadow: var(--panel-shadow);
+}
+
+.heroPanel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7, 7, 12, 0.28), transparent 42%, rgba(7, 7, 12, 0.24)),
+    linear-gradient(180deg, rgba(7, 7, 12, 0.14), transparent 28%, rgba(7, 7, 12, 0.44));
+  pointer-events: none;
+}
+
+.statusRow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 10px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  background: rgba(10, 10, 16, 0.92);
+  border: 1px solid rgba(96, 184, 232, 0.25);
 }
 
 .logo {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .title {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 26px;
-  color: #c8a96e;
+  font-family: var(--font-pixel);
+  font-size: clamp(28px, 7vw, 44px);
+  color: var(--color-accent);
   letter-spacing: 0.08em;
   margin: 0;
-  text-shadow: 3px 3px 0 #000, 0 0 20px rgba(200,169,110,0.3);
+  text-shadow: 3px 3px 0 #000, 0 0 20px rgba(200, 169, 110, 0.28);
 }
 
 .ampersand {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 16px;
-  color: #3d2b1f;
+  font-family: var(--font-pixel);
+  font-size: clamp(14px, 3vw, 18px);
+  color: var(--color-text-dim);
   letter-spacing: 0.08em;
-  margin: 4px 0;
 }
 
 .subtitle {
-  font-family: 'Press Start 2P', monospace;
+  position: relative;
+  z-index: 1;
+  max-width: 26ch;
+  font-family: var(--font-pixel);
   font-size: 10px;
+  line-height: 1.9;
   color: var(--color-text-muted);
-  text-align: center;
-  line-height: 1.8;
-  letter-spacing: 0.05em;
 }
 
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  max-width: 240px;
-  margin-top: 12px;
+  gap: 12px;
+}
+
+.btnPrimary,
+.btnSecondary {
+  min-height: var(--touch-target);
+  padding: 14px 16px;
+  font-family: var(--font-pixel);
+  cursor: pointer;
+  letter-spacing: 0.05em;
 }
 
 .btnPrimary {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 14px;
+  font-size: 13px;
   color: #0a0a0f;
-  background: #c8a96e;
-  border: 2px solid #c8a96e;
-  padding: 16px;
-  cursor: pointer;
-  border-radius: 0;
+  background: var(--color-accent);
+  border: 2px solid var(--color-accent);
   box-shadow: 3px 3px 0 #000;
-  letter-spacing: 0.05em;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-@media (hover: hover) {
-  .btnPrimary:hover {
-    background: #f0d090;
-    border-color: #f0d090;
-  }
-}
-
-.btnPrimary:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 #000 !important;
 }
 
 .btnSecondary {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
-  color: #c8a96e;
-  background: #12121e;
-  border: 2px solid #3d2b1f;
-  padding: 12px 16px;
-  cursor: pointer;
-  border-radius: 0;
-  box-shadow: 3px 3px 0 #000;
-  letter-spacing: 0.05em;
-  transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s;
+  font-size: 10px;
+  color: var(--color-accent);
+  background: rgba(18, 18, 30, 0.94);
+  border: 2px solid rgba(107, 82, 64, 0.58);
+  box-shadow: var(--panel-shadow-tight);
 }
 
-@media (hover: hover) {
-  .btnSecondary:hover {
-    border-color: #c8a96e;
-  }
+.secondaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
+.secondaryGrid > :last-child {
+  grid-column: 1 / -1;
+}
+
+.btnPrimary:active,
 .btnSecondary:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 #000 !important;
 }
 
 .version {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-pixel);
   font-size: 8px;
-  color: #5a5a7a;
-  margin-top: auto;
+  color: var(--color-text-dim);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .screen {
+    padding: 16px;
+  }
+
+  .heroPanel {
+    padding: 16px;
+  }
+
+  .secondaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .secondaryGrid > :last-child {
+    grid-column: auto;
+  }
 }

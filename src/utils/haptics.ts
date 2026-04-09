@@ -4,6 +4,31 @@
 
 let IS_HAPTICS_ENABLED = true
 
+type HapticImpactStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
+type HapticNotificationStyle = 'success' | 'warning' | 'error'
+
+interface TelegramHapticFeedback {
+  impactOccurred: (style: HapticImpactStyle) => void
+  notificationOccurred: (type: HapticNotificationStyle) => void
+  selectionChanged: () => void
+}
+
+type TelegramWindow = Window & typeof globalThis & {
+  Telegram?: {
+    WebApp?: {
+      HapticFeedback?: unknown
+    }
+  }
+}
+
+function isTelegramHapticFeedback(value: unknown): value is TelegramHapticFeedback {
+  return typeof value === 'object'
+    && value !== null
+    && 'impactOccurred' in value
+    && 'notificationOccurred' in value
+    && 'selectionChanged' in value
+}
+
 export function setHapticsEnabled(enabled: boolean) {
   IS_HAPTICS_ENABLED = enabled
 }
@@ -14,7 +39,8 @@ function hf() {
   }
 
   try {
-    return (window as any)?.Telegram?.WebApp?.HapticFeedback ?? null
+    const candidate = (window as TelegramWindow).Telegram?.WebApp?.HapticFeedback
+    return isTelegramHapticFeedback(candidate) ? candidate : null
   } catch {
     return null
   }

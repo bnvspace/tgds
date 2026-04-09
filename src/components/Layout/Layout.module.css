@@ -10,6 +10,18 @@
   background-color: var(--color-bg);
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
+}
+
+.root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top center, rgba(123, 104, 238, 0.14), transparent 34%),
+    radial-gradient(circle at 50% 110%, rgba(200, 169, 110, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 25%);
+  pointer-events: none;
 }
 
 .frame {
@@ -19,8 +31,14 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  background-color: var(--color-surface);
+  background:
+    linear-gradient(180deg, rgba(26, 26, 46, 0.98), rgba(11, 11, 18, 0.98));
+  border: 1px solid rgba(107, 82, 64, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 24px 48px rgba(0, 0, 0, 0.3);
   overflow: hidden;
+  position: relative;
 }
 
 .header {
@@ -52,6 +70,9 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 18%),
+    linear-gradient(180deg, rgba(10, 10, 16, 0), rgba(10, 10, 16, 0.3));
 }
 
 .content > * {

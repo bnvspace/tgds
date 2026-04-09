@@ -1,125 +1,290 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-  background: #12121e;
-  border: 2px solid #3d2b1f;
-  box-shadow: inset -2px -2px 0 #1a0e06, inset 2px 2px 0 #5a3d28, 4px 4px 0 #000;
+  gap: 8px;
+  padding: 12px;
+  background:
+    radial-gradient(circle at top center, rgba(224, 82, 82, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(18, 18, 30, 0.98), rgba(11, 11, 16, 0.96));
+  border: 2px solid rgba(107, 82, 64, 0.65);
+  box-shadow: var(--panel-shadow);
 }
 
-/* Enemy viewport — like a monitor above the slot */
 .viewport {
   width: 100%;
-  min-height: 196px;
-  background: #0a0a0f;
-  border: 2px solid #2a2a3e;
+  min-height: clamp(180px, 34vh, 260px);
+  padding: 22px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 20px 16px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(231, 76, 60, 0.10), transparent 24%),
+    linear-gradient(180deg, rgba(10, 10, 15, 0.38), rgba(18, 24, 38, 0.58)),
+    var(--enemy-backdrop) center / cover no-repeat;
+  border: 2px solid rgba(42, 42, 62, 0.85);
+}
+
+.ambientGlow,
+.ambientMist,
+.stageShadow {
+  position: absolute;
+  pointer-events: none;
+}
+
+.ambientGlow {
+  inset: 12% 16% 18%;
+  z-index: 0;
+  filter: blur(10px);
+  opacity: 0.72;
+}
+
+.viewport[data-zone='swamp'] .ambientGlow {
+  background: radial-gradient(circle, rgba(124, 204, 146, 0.48), rgba(76, 175, 110, 0.14) 54%, transparent 76%);
+}
+
+.viewport[data-zone='sewer'] .ambientGlow {
+  background: radial-gradient(circle, rgba(96, 184, 232, 0.42), rgba(34, 98, 120, 0.18) 52%, transparent 74%);
+}
+
+.viewport[data-zone='citadel'] .ambientGlow {
+  background: radial-gradient(circle, rgba(208, 92, 124, 0.42), rgba(123, 104, 238, 0.18) 48%, transparent 74%);
+}
+
+.ambientMist {
+  left: -8%;
+  right: -8%;
+  bottom: 0;
+  height: 38%;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(8, 10, 16, 0), rgba(8, 10, 16, 0.72)),
+    radial-gradient(circle at 50% 120%, rgba(240, 208, 144, 0.18), transparent 58%);
+  opacity: 0.9;
+}
+
+.stageShadow {
+  left: 50%;
+  bottom: 14px;
+  width: 68%;
+  height: 18%;
+  z-index: 0;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.56), transparent 72%);
 }
 
 .bossViewport {
-  min-height: 320px;
+  min-height: clamp(220px, 40vh, 320px);
   padding-block: 28px;
 }
 
-.icon { font-size: 76px; line-height: 1; }
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(96px, 22vw, 148px);
+  height: clamp(96px, 22vw, 148px);
+  font-size: clamp(72px, 12vw, 104px);
+  line-height: 1;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
+  position: relative;
+  z-index: 1;
+  transition:
+    transform 0.22s ease,
+    filter 0.22s ease;
+}
 
 .bossViewport .icon {
-  font-size: 124px;
+  width: clamp(132px, 28vw, 200px);
+  height: clamp(132px, 28vw, 200px);
+  font-size: clamp(104px, 18vw, 148px);
 }
 
 .statusBadges {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 3px;
 }
 
 .badge {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-pixel);
   font-size: 8px;
-  padding: 2px 4px;
-  background: #1c1c2e;
-  border: 1px solid #3d2b1f;
+  padding: 4px 6px;
+  background: rgba(12, 16, 24, 0.9);
+  border: 1px solid rgba(107, 82, 64, 0.5);
 }
 
-.badge[data-type='poison'] { color: #9b72cf; border-color: #9b72cf; }
-.badge[data-type='freeze']  { color: #60b8e8; border-color: #60b8e8; }
-.badge[data-type='burn']    { color: #e87830; border-color: #e87830; }
+.badge[data-type='poison'] {
+  color: #9b72cf;
+  border-color: #9b72cf;
+}
 
-/* HP row */
+.badge[data-type='freeze'] {
+  color: #60b8e8;
+  border-color: #60b8e8;
+}
+
+.badge[data-type='burn'] {
+  color: #e87830;
+  border-color: #e87830;
+}
+
 .hpRow {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  gap: 12px;
 }
 
 .hpLabel {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
-  color: #c8a96e;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--color-accent);
 }
 
 .hpValues {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: #e05252;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #ffd7cf;
 }
 
 .hpBar {
-  height: 6px;
-  background: #2a0e0e;
-  border: 1px solid #3d1515;
+  height: 10px;
+  background: rgba(42, 14, 14, 0.9);
+  border: 1px solid rgba(61, 21, 21, 0.85);
+  overflow: hidden;
 }
 
 .hpFill {
   height: 100%;
-  background: #e05252;
-  box-shadow: inset 0 1px 0 rgba(255,120,120,0.4);
+  background: linear-gradient(90deg, #cf4438, #f15d44);
+  box-shadow: inset 0 1px 0 rgba(255, 120, 120, 0.4);
   transition: width 0.3s steps(6);
 }
 
-/* Next attack forecast */
 .nextAttack {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px;
-  background: #1c1c2e;
-  border: 1px solid #2a2a3e;
-  margin-top: 2px;
-  flex-wrap: wrap;
+  padding: 8px;
+  background: rgba(18, 24, 38, 0.92);
+  border: 1px solid rgba(96, 184, 232, 0.18);
+}
+
+.intentBadge {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 15, 0.92);
+  border: 1px solid rgba(107, 82, 64, 0.55);
+}
+
+.intentBadge[data-attack='physical'] {
+  border-color: rgba(224, 82, 82, 0.55);
+}
+
+.intentBadge[data-attack='magical'] {
+  border-color: rgba(96, 184, 232, 0.5);
+}
+
+.intentBadge[data-attack='debuff'] {
+  border-color: rgba(155, 114, 207, 0.58);
+}
+
+.intentIcon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.attackCopy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .nextLabel {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-pixel);
   font-size: 8px;
-  color: #b5a89d;
+  color: var(--color-text-muted);
 }
 
 .attackType {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-pixel);
   font-size: 8px;
-  color: #c8a96e;
+  color: var(--color-info);
 }
 
 .attackDmg {
-  font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
-  color: #e05252;
-  font-weight: bold;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #ffd7cf;
 }
 
 .attackDesc {
-  font-size: 12px;
-  color: #b5a89d;
-  flex: 1;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.viewport[data-phase='spinning'] .icon {
+  transform: translateY(-4px) scale(1.03);
+}
+
+.viewport[data-phase='resolving'] .icon {
+  transform: scale(1.05);
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.55));
+}
+
+.viewport[data-phase='enemy_turn'] .ambientGlow {
+  opacity: 0.92;
+  background:
+    radial-gradient(circle, rgba(224, 82, 82, 0.38), transparent 42%),
+    radial-gradient(circle, rgba(240, 208, 144, 0.18), transparent 58%);
+}
+
+.viewport[data-phase='enemy_turn'] .icon {
+  transform: translateY(3px) scale(0.98);
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.62));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .wrap {
+    padding: 10px;
+  }
+
+  .viewport {
+    min-height: 168px;
+  }
+
+  .bossViewport {
+    min-height: 208px;
+  }
+
+  .nextAttack {
+    align-items: flex-start;
+  }
 }

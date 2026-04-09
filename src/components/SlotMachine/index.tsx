@@ -25,7 +25,6 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
     const resolveSpinRef = useRef<(() => void) | null>(null)
     const activeSpinRef = useRef(false)
     const stopInFlightRef = useRef(false)
-    const queuedStopsRef = useRef(0)
     const nextStopIndexRef = useRef(0)
     const totalReelsRef = useRef(reels.length)
     const { lang, localizeSymbolName, t } = useTranslation()
@@ -39,7 +38,6 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
 
     function resolveSpinIfFinished(nextIndex: number) {
       if (nextIndex >= totalReelsRef.current) {
-        queuedStopsRef.current = 0
         resolveSpinRef.current?.()
       }
     }
@@ -65,12 +63,6 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
 
         if (nextIndex >= totalReelsRef.current) {
           resolveSpinIfFinished(nextIndex)
-          return
-        }
-
-        if (queuedStopsRef.current > 0) {
-          queuedStopsRef.current -= 1
-          stopCurrentReel()
         }
       })
     }
@@ -83,7 +75,6 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
 
         activeSpinRef.current = true
         stopInFlightRef.current = false
-        queuedStopsRef.current = 0
         totalReelsRef.current = results.length
         nextStopIndexRef.current = 0
 
@@ -95,7 +86,6 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
           resolveSpinRef.current = () => {
             activeSpinRef.current = false
             stopInFlightRef.current = false
-            queuedStopsRef.current = 0
             spinPromiseRef.current = null
             resolveSpinRef.current = null
             resolve()
@@ -111,8 +101,6 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
         }
 
         if (stopInFlightRef.current) {
-          const maxQueuedStops = Math.max(0, totalReelsRef.current - nextStopIndexRef.current - 1)
-          queuedStopsRef.current = Math.min(maxQueuedStops, queuedStopsRef.current + 1)
           return
         }
 

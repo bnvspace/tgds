@@ -1,0 +1,353 @@
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.burst {
+  position: absolute;
+  inset: 0;
+}
+
+.impactCore,
+.impactRing,
+.slashPrimary,
+.slashSecondary,
+.guardRipple,
+.healPulse,
+.qteHalo,
+.lootSpark {
+  position: absolute;
+}
+
+.impactCore {
+  top: 44%;
+  left: 50%;
+  width: 72px;
+  height: 72px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 243, 215, 0.94), rgba(232, 120, 48, 0.42) 42%, transparent 72%);
+  mix-blend-mode: screen;
+  animation: impactCore 360ms ease-out both;
+}
+
+.impactRing {
+  top: 44%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 219, 170, 0.78);
+  border-radius: 50%;
+  animation: impactRing 520ms ease-out both;
+}
+
+.slashPrimary,
+.slashSecondary {
+  top: 45%;
+  left: 50%;
+  height: 8px;
+  transform-origin: center;
+  mix-blend-mode: screen;
+}
+
+.slashPrimary {
+  width: 54%;
+  background: linear-gradient(90deg, transparent, rgba(255, 241, 216, 0.96) 22%, rgba(232, 120, 48, 0.84) 62%, transparent);
+  transform: translate(-50%, -50%) rotate(-18deg);
+  animation: slashPrimary 420ms ease-out both;
+}
+
+.slashSecondary {
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 221, 182, 0.72) 26%, rgba(224, 82, 82, 0.64) 62%, transparent);
+  transform: translate(-50%, -50%) rotate(14deg);
+  animation: slashSecondary 420ms ease-out both 70ms;
+}
+
+.guardRipple {
+  inset: 14% 18%;
+  border: 2px solid rgba(159, 232, 186, 0.68);
+  background: radial-gradient(circle, rgba(76, 175, 110, 0.18), transparent 68%);
+  animation: guardRipple 760ms ease-out both;
+}
+
+.healPulse {
+  left: 50%;
+  bottom: -6%;
+  width: 72%;
+  height: 42%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(circle at 50% 80%, rgba(155, 255, 182, 0.36), transparent 54%),
+    linear-gradient(180deg, transparent, rgba(76, 175, 110, 0.18));
+  filter: blur(6px);
+  animation: healPulse 820ms ease-out both;
+}
+
+.qteHalo {
+  inset: 18% 24%;
+  border-radius: 50%;
+  animation: qteHalo 700ms ease-out both;
+}
+
+.qteHalo[data-tier='hit'] {
+  background: radial-gradient(circle, rgba(240, 208, 144, 0.22), transparent 66%);
+}
+
+.qteHalo[data-tier='crit'] {
+  background: radial-gradient(circle, rgba(111, 183, 255, 0.22), transparent 68%);
+}
+
+.qteHalo[data-tier='mega_crit'] {
+  background:
+    radial-gradient(circle, rgba(255, 248, 196, 0.36), transparent 54%),
+    radial-gradient(circle, rgba(111, 183, 255, 0.22), transparent 72%);
+}
+
+.lootSpark {
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(180deg, rgba(255, 242, 184, 0.94), rgba(200, 169, 110, 0.68));
+  transform: rotate(45deg);
+  animation: lootSpark 860ms ease-out both;
+}
+
+.lootSpark[data-index='0'] {
+  top: 26%;
+  left: 22%;
+}
+
+.lootSpark[data-index='1'] {
+  top: 18%;
+  right: 24%;
+  animation-delay: 100ms;
+}
+
+.lootSpark[data-index='2'] {
+  top: 34%;
+  right: 18%;
+  animation-delay: 160ms;
+}
+
+.chipRail {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 4px 7px;
+  font-family: var(--font-pixel);
+  font-size: 6px;
+  line-height: 1.6;
+  background: rgba(10, 10, 16, 0.92);
+  border: 1px solid rgba(107, 82, 64, 0.46);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.24);
+  animation: chipRise 820ms ease-out both;
+  animation-delay: calc(var(--chip-index, 0) * 70ms);
+}
+
+.chip[data-tone='damage'] {
+  color: #ffd7cf;
+  border-color: rgba(224, 82, 82, 0.56);
+}
+
+.chip[data-tone='armor'] {
+  color: #d7f2de;
+  border-color: rgba(76, 175, 110, 0.52);
+}
+
+.chip[data-tone='tokens'] {
+  color: #f3e4b2;
+  border-color: rgba(200, 169, 110, 0.56);
+}
+
+.chip[data-tone='heal'] {
+  color: #d2fbde;
+  border-color: rgba(96, 184, 232, 0.46);
+}
+
+.chipIcon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.layer[data-zone='swamp'] .guardRipple {
+  border-color: rgba(124, 204, 146, 0.72);
+}
+
+.layer[data-zone='sewer'] .qteHalo[data-tier='crit'],
+.layer[data-zone='sewer'] .qteHalo[data-tier='mega_crit'] {
+  background:
+    radial-gradient(circle, rgba(111, 220, 255, 0.22), transparent 58%),
+    radial-gradient(circle, rgba(59, 120, 133, 0.18), transparent 74%);
+}
+
+.layer[data-zone='citadel'] .impactCore {
+  background: radial-gradient(circle, rgba(255, 242, 220, 0.94), rgba(208, 92, 124, 0.44) 40%, transparent 72%);
+}
+
+@keyframes impactCore {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.45);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.18);
+  }
+}
+
+@keyframes impactRing {
+  from {
+    opacity: 0.92;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.5);
+  }
+}
+
+@keyframes slashPrimary {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-18deg) scaleX(0.2);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-48%, -54%) rotate(-18deg) scaleX(1.08);
+  }
+}
+
+@keyframes slashSecondary {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(14deg) scaleX(0.2);
+  }
+
+  35% {
+    opacity: 0.88;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-52%, -46%) rotate(14deg) scaleX(1.02);
+  }
+}
+
+@keyframes guardRipple {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+
+  18% {
+    opacity: 0.84;
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes healPulse {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.7);
+  }
+
+  24% {
+    opacity: 0.92;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(1.18);
+  }
+}
+
+@keyframes qteHalo {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+
+  28% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes lootSpark {
+  from {
+    opacity: 0;
+    transform: rotate(45deg) scale(0.2);
+  }
+
+  22% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(26px) rotate(45deg) scale(1.2);
+  }
+}
+
+@keyframes chipRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+
+  24% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-16px) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .impactCore,
+  .impactRing,
+  .slashPrimary,
+  .slashSecondary,
+  .guardRipple,
+  .healPulse,
+  .qteHalo,
+  .lootSpark,
+  .chip {
+    animation-duration: 10ms;
+  }
+}

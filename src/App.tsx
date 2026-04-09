@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { BOSS_CHIPS_REWARD, useGameStore } from '@/store/gameStore'
 import StartScreen from '@/screens/StartScreen'
-import InitialShopScreen from '@/screens/InitialShop'
+import StartSymbolsScreen from '@/screens/InitialShop'
 import CombatScreen from '@/screens/CombatScreen'
+import PostCombatScreen from '@/screens/PostCombatScreen'
 import ShopScreen from '@/screens/ShopScreen'
 import WorldMapScreen from '@/screens/WorldMapScreen'
 import LeaderboardScreen from '@/screens/LeaderboardScreen'
@@ -47,7 +48,7 @@ export default function App() {
         }
       }
     }
-  }, [phase])
+  }, [phase, player])
 
   // Sync mute state
   useEffect(() => {
@@ -88,8 +89,8 @@ export default function App() {
         return <StartScreen key="start" />
       case 'settings':
         return <SettingsScreen key="settings" />
-      case 'initial_shop':
-        return <InitialShopScreen key="initial_shop" />
+      case 'start_symbols':
+        return <StartSymbolsScreen key="start_symbols" />
       case 'world_map':
         return <WorldMapScreen key="world_map" />
       case 'combat_start':
@@ -99,6 +100,7 @@ export default function App() {
       case 'turn_end':
         return <CombatScreen key="combat" />
       case 'post_combat':
+        return <PostCombatScreen key="post-combat" />
       case 'shop':
         return <ShopScreen key="shop" />
       case 'game_over':

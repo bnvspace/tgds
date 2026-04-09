@@ -43,7 +43,6 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     const tg = getTelegramWebApp()
     if (!tg || typeof tg.onEvent !== 'function' || typeof tg.offEvent !== 'function') {
-      setInsets(EMPTY_INSETS)
       return
     }
     const webApp = tg

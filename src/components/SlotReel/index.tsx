@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import type { GameSymbol } from '@/types'
+import { createGameIconNode } from '@/utils/gameIcon'
 import { haptics } from '@/utils/haptics'
 import styles from './SlotReel.module.css'
 
@@ -90,19 +91,33 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
     const lastBoundaryRef = useRef(0)
     const spinningRef = useRef(false)
     const rafRef = useRef<number | null>(null)
+    const symbolPoolRef = useRef(symbolPool)
+    const initialSymbolRef = useRef(initialSymbol)
+    const symbolPoolKey = symbolPool.map((symbol) => `${symbol.id}:${symbol.name}`).join('|')
+    const initialSymbolKey = initialSymbol ? `${initialSymbol.id}:${initialSymbol.name}` : ''
 
     function renderStrip(symbols: GameSymbol[]) {
       if (!stripRef.current) return
 
-      stripRef.current.innerHTML = ''
+      stripRef.current.replaceChildren()
       for (const symbol of symbols) {
         if (!symbol) continue
         const cell = document.createElement('div')
         cell.className = styles.cell
-        cell.innerHTML = `
-          <span class="${styles.icon}">${symbol.icon || '?'}</span>
-          <span class="${styles.name}" style="color:${TYPE_COLOR[symbol.type] || '#fff'}">${symbol.name || ''}</span>
-        `
+
+        const iconNode = createGameIconNode({
+          icon: symbol.icon || '?',
+          alt: symbol.name || 'symbol',
+          className: styles.icon,
+        })
+
+        const nameNode = document.createElement('span')
+        nameNode.className = styles.name
+        nameNode.style.color = TYPE_COLOR[symbol.type] || '#fff'
+        nameNode.textContent = symbol.name || ''
+
+        cell.appendChild(iconNode)
+        cell.appendChild(nameNode)
         stripRef.current.appendChild(cell)
       }
     }
@@ -113,10 +128,21 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
     }
 
     useEffect(() => {
-      if (!stripRef.current || symbolPool.length === 0) return
+      symbolPoolRef.current = symbolPool
+      initialSymbolRef.current = initialSymbol
+    }, [initialSymbol, symbolPool])
 
-      const initial = initialSymbol ?? symbolPool[0]
-      renderStrip([symbolPool[symbolPool.length - 1], initial, symbolPool[0]])
+    useEffect(() => {
+      const pool = symbolPoolRef.current
+      const leadingSymbol = pool[0]
+      const trailingSymbol = pool[pool.length - 1]
+      const initialEntry = initialSymbolRef.current ?? pool[0]
+
+      if (!stripRef.current || pool.length === 0 || !leadingSymbol || !trailingSymbol || !initialEntry) {
+        return
+      }
+
+      renderStrip([trailingSymbol, initialEntry, leadingSymbol])
       applyTranslate(finalTranslate(1))
 
       return () => {
@@ -124,13 +150,7 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
           cancelAnimationFrame(rafRef.current)
         }
       }
-    }, [
-      initialSymbol?.id,
-      initialSymbol?.name,
-      labelVersion,
-      symbolPool.length,
-      symbolPool.map((symbol) => symbol.name).join('|'),
-    ])
+    }, [initialSymbolKey, labelVersion, symbolPool.length, symbolPoolKey])
 
     function runLoop(now: number) {
       if (!spinningRef.current || loopBaseRef.current.length === 0) return

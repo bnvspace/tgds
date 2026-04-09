@@ -1,43 +1,72 @@
 # Game Mechanics: Slot & Daggers
 
-> VERIFIED GAME DESIGN SPEC (based on real gameplay behaviour)
-> STRICTLY FOLLOW. NO INVENTION.
+> Актуальный source of truth для прототипа.
+> Если текущий код конфликтует с этим документом, правим код.
+> Цель: приблизить игровой опыт к оригинальной Slots & Daggers.
+
+---
+
+## Приоритеты разработки
+
+1. **Боевая аутентичность**
+   - manual stop
+   - skill checks
+   - физический vs магический урон
+   - poison / stun
+   - читаемые enemy intents
+2. **Экономика забега**
+   - лимит монет
+   - магазин после победы
+   - чистка пула символов
+   - боевые траты монет
+3. **Атмосфера и game feel**
+   - автомат на столе в таверне
+   - вылетающие монеты и chips
+   - crowd murmur / cheering
+   - хрустящие звуки барабанов
 
 ---
 
 ## Core Concept
 
-Slot machine = **combat engine**.
+Slot machine = **единственный интерфейс боя**.
 
-- Spin = action
-- Symbols = abilities
-- No paylines. No gambling. No dungeon grid.
+- Spin = начало действия
+- Manual stop = главный input игрока
+- Symbols = способности / оружие / защита / экономика
+- Нет paylines
+- Нет авто-боя
+- Нет dungeon grid как ядра игры
 
-Enemy always visible above reels.  
-Game = **Slay the Spire × Slot Machine × Tactical Timing**
+Enemy всегда виден над барабанами.  
+Игра = **Slay the Spire × Slot Machine × Tactical Timing**.
 
 ---
 
 ## Full Game Loop
 
-```
+```text
 INIT_RUN
   ↓
-META_MODIFIERS_APPLY       ← applyModifiers(meta) → базовые статы игрока
+META_MODULES_APPLY
   ↓
-INITIAL_SYMBOL_SELECTION   ← 6–7 символов на выбор → попадают на барабаны
+START_SYMBOL_SELECTION     ← выбрать ровно 3 стартовых символа
   ↓
 GENERATE_WORLD_MAP
   ↓
 SELECT_NODE
   ↓
-COMBAT_START               ← инициализация Enemy
+COMBAT_START               ← инициализация врага, показ next intent
   ↓
-PLAYER_SPIN_PHASE          ← барабаны + QTE (armor сбрасывается ЗДЕСЬ)
+PLAYER_SPIN_PHASE          ← armor сбрасывается здесь
   ↓
-SYMBOL_RESOLUTION          ← 7-шаговый pipeline
+MANUAL_STOP_CHAIN          ← игрок останавливает барабаны вручную слева направо
   ↓
-ENEMY_ACTION               ← детерминированный паттерн
+SKILL_CHECK_RESOLUTION     ← тайминг оружия / magnet assist / crit logic
+  ↓
+SYMBOL_RESOLUTION
+  ↓
+ENEMY_ACTION
   ↓
 TURN_END_CHECK
 
@@ -48,201 +77,385 @@ FINAL_BOSS_DEFEATED → RUN_COMPLETE → chips
 
 ---
 
-## ⚠️ Критические правила (строго соблюдать)
+## Критические правила
 
 | # | Правило |
 |---|---------|
-| 1 | У Player **НЕТ** поля `attack`. Урон — только из символов |
-| 2 | Броня (`armor`) сбрасывается в начале **PLAYER_SPIN_PHASE**, не в начале боя |
-| 3 | Паттерн атаки врага — детерминированный цикл, **не random** |
-| 4 | Порядок разрешения символов (Resolution order) — критически важен |
-| 5 | Синергии работают только внутри **одного спина**, не персистентны |
+| 1 | У Player **нет** поля `attack`. Урон идет только из символов и их модификаторов |
+| 2 | **Автостоп запрещен.** Барабаны останавливаются только вручную |
+| 3 | Барабаны останавливаются **по очереди слева направо** |
+| 4 | Броня (`armor`) сбрасывается в начале **PLAYER_SPIN_PHASE**, не в начале боя |
+| 5 | Паттерн атаки врага — детерминированный цикл, не random |
+| 6 | Намерение врага видно **до спина** |
+| 7 | Старт рана — **ровно 3 стартовых символа**, без initial shop |
+| 8 | В активном пуле символов нельзя опускаться ниже **3** |
+| 9 | Лимит монет в забеге — **100** |
+| 10 | Заряд Bomb сохраняется между спинами и боями внутри одного рана |
+| 11 | Magic damage игнорирует физическую броню/щит |
+| 12 | Poison игнорирует броню и наносит периодический урон |
+| 13 | Stun отменяет следующий ход врага полностью |
+| 14 | Match-3 одинаковых символов утраивает их базовый эффект |
 
 ---
 
 ## Player Model
 
-```typescript
+```ts
 interface Player {
   hp: number
   maxHp: number
-  armor: number          // resets at start of PLAYER_SPIN_PHASE each turn
+  armor: number
   reels: Reel[]
   relics: Relic[]
-  tokens: number         // in-run currency
+  tokens: number           // 0..100, in-run currency
+  chipsEarned: number
+  bombCharge: number       // persistent for the current run only
   metaModifiers: Modifier[]
 }
-// NO attack field. Damage comes ONLY from symbols.
 ```
+
+Примечания:
+
+- `armor` защищает только от физического урона
+- `bombCharge` сбрасывается только при старте нового рана
+- у игрока может быть 3–5 барабанов, но ран никогда не стартует меньше чем с 3
 
 ---
 
 ## Enemy Model
 
-```typescript
+```ts
 interface Enemy {
   hp: number
   maxHp: number
-  patternIndex: number           // cycles deterministically
-  attackPattern: AttackPattern[] // shown to player BEFORE spin
+  armor: number
+  patternIndex: number
+  attackPattern: AttackPattern[]
+  statusEffects: StatusEffect[]
 }
-// DETERMINISTIC cycle. NOT random. This enables tactical decisions.
 ```
 
-Паттерн атаки **показывается игроку до спина** → игрок принимает тактическое решение.
+Примечания:
+
+- `attackPattern` показывается игроку заранее
+- `armor` у врага должна делать магию и poison тактически ценными
+- поведение врага должно быть читаемым, а не скрытым за RNG
 
 ---
 
-## Reels (Барабаны)
+## Start of Run
 
-Каждый барабан — независимый взвешенный пул.
+### Базовое правило
 
-```typescript
+Каждый ран начинается с **выбора ровно 3 стартовых символов**.
+
+### Первый запуск / пустая мета
+
+Если у игрока еще нет разблокированного стартового пула, ран стартует с фиксированным набором:
+
+1. `Rusty Dagger`
+2. `Wooden Shield`
+3. `Coin`
+
+### После прогрессии
+
+Когда стартовый пул расширен, игрок все равно выбирает **ровно 3** стартовых символа из разблокированных стартовых опций.
+
+### Что запрещено
+
+- Нет стартового магазина перед первым боем
+- Нет траты стартовых монет на набор билда до первого энкаунтера
+- Нельзя стартовать с 1–2 символами
+
+---
+
+## Reels and Manual Stop
+
+Каждый барабан — независимый взвешенный пул:
+
+```ts
 interface Reel {
   symbolPool: Array<{ symbol: GameSymbol; weight: number }>
 }
-
-// Алгоритм спина (НЕ grid, НЕ paylines):
-function spin(reels: Reel[]): GameSymbol[] {
-  return reels.map(reel => weightedRandom(reel.symbolPool))
-}
 ```
 
-Результат спина = **массив символов**, по одному на барабан.  
-Нет сетки. Нет позиций. Нет линий выплат.
+### Правила спина
+
+1. Нажатие `SPIN` запускает вращение всех барабанов.
+2. Затем игрок жмет `STOP`.
+3. Каждое нажатие `STOP` останавливает **только следующий активный барабан**.
+4. Порядок остановки жесткий: `1 → 2 → 3 → 4 → 5`.
+5. Пока игрок не остановил последний барабан, резолв не начинается.
+
+### UX для мобильного/TMA
+
+Manual stop остается обязательным. Улучшать UX нужно не автостопом, а:
+
+- большой нижней кнопкой `STOP` под большой палец
+- допустимым `magnet assist` около идеального тайминга
+- опциональным кратким визуальным slow-down перед финальной остановкой
 
 ---
 
-## Symbol Resolution Order (7 шагов — не менять порядок!)
+## Skill Checks
 
-```
-1. Collect symbols       ← собрать выпавшие символы
-2. Apply base values     ← суммировать damage / armor / gold / heal
-3. Apply synergies       ← тег-based комбо внутри текущего спина
-4. Apply relic mods      ← пассивные бонусы от реликвий
-5. Apply QTE multiplier  ← ТОЛЬКО к damage (не к armor/gold/heal)
-6. Apply enemy resistance ← enemy resistances / debuffs
-7. Apply effects         ← нанести урон, начислить броню, золото
-```
+Skill check завязан на **тайминг ручной остановки**, а не на пассивный авто-QTE после спина.
 
-**QTE модифицирует ТОЛЬКО damage.** Броня, золото и лечение — без множителя.
+### Базовые правила
+
+- не все символы обязаны использовать skill check
+- timed-оружие должно получать выгоду от точного `STOP`
+- идеальный тайминг может давать гарантированный крит или усиленный эффект
+- помощь мобильному вводу допускается через `magnet assist`, но не через автостоп
+
+### Ограничение
+
+Множители skill check применяются только к боевой части эффекта, не к:
+
+- armor
+- coins
+- heal
 
 ---
 
-## QTE Multipliers
+## Match-3 Rule
 
-| Tier | Условие | M_qte |
-|------|---------|-------|
-| miss | промах | ×1.0 |
-| hit | широкая зона | ×1.5 |
-| crit | узкая зона | ×2.0 |
-| mega | 3+ одинаковых тега + все QTE успешны | ×3.0 |
+Если игрок получает **3 или больше одинаковых символа** в одном спине, базовый эффект этой группы считается как минимум `×3`.
 
+Для прототипного baseline:
+
+- `3+ одинаковых` = триггер Match-3
+- Match-3 утраивает **базовый** эффект совпавшей группы
+- затем уже применяются синергии, пассивки и skill-check множители
+
+Примеры:
+
+- `3× Coin` → базовые монеты `×3`, затем бонусы синергий
+- `3× Shield` → базовая броня `×3`
+- `3× Dagger` → базовый физический урон `×3`
+
+---
+
+## Symbol Resolution Order
+
+Порядок разрешения важен. Менять без явного обсуждения нельзя.
+
+```text
+1. Collect symbols
+2. Apply base values per symbol
+3. Apply Match-3 multipliers
+4. Apply same-spin synergies
+5. Apply relic/passive/run modifiers
+6. Apply skill-check multiplier or guaranteed crit
+7. Apply armor / resist / bypass rules
+8. Commit effects: damage, armor, heal, coins, statuses, bomb charge
 ```
-D_total = (Σ D_base · L_mod · S_syn · R_mod) · M_qte
-                                                   ↑ применяется последним перед resistance
-```
+
+---
+
+## Damage Rules
+
+### Physical
+
+- режется `armor`
+- важен против безщитовых врагов
+
+### Magic
+
+- игнорирует `armor`
+- наносит урон напрямую `hp`
+
+### Poison
+
+- игнорирует `armor`
+- наносит урон каждый ход, пока эффект активен
+
+### Stun
+
+- отменяет следующий `ENEMY_ACTION`
+- после срабатывания снимается
+
+---
+
+## Status Effects
+
+### Poison
+
+- источник: символы, враги, синергии
+- эффект: периодический урон без учета брони
+- нужен для того, чтобы defense build не ломал игру
+
+### Stun
+
+- источник: отдельные символы / активные эффекты / синергии
+- эффект: враг пропускает следующий ход
+
+---
+
+## Persistent Symbols and Run Effects
+
+### Bomb
+
+Bomb — персистентный run-scale символ.
+
+Правила:
+
+- Bomb накапливает заряд/урон внутри текущего рана
+- накопление сохраняется между спинами
+- накопление сохраняется между боями
+- накопление сбрасывается только при новом ране
+
+Эта механика **намеренно сильная** и может ломать late game. Это допустимо, если помогает воспроизвести оригинальный опыт.
 
 ---
 
 ## Synergy System
 
-**Синергии работают только внутри одного спина. Никогда не персистентны.**
+Синергии работают только внутри **одного спина**, если не сказано иначе отдельным правилом символа.
 
-Детекция по тегам, **не по ID символа**.
+Детекция идет по тегам, а не по hardcoded UI-сценарию.
 
-```typescript
-// Пример:
-{ requiredTags: ['explosive', 'diamond'], damageMultiplier: 2.0 }   // Bomb + Diamond
-{ requiredTags: ['coin', 'coin', 'coin'], bonusTokens: 20 }          // 3× Coin
-{ requiredTags: ['shield', 'shield'], armorBonus: 15 }               // Shield + Shield reinforce
+```ts
+{ requiredTags: ['explosive', 'diamond'], damageMultiplier: 2 }
+{ requiredTags: ['coin', 'coin', 'coin'], bonusTokens: 20 }
+{ requiredTags: ['shield', 'weapon_heavy'], special: 'axe_scales_from_armor' }
 ```
 
----
+Примечание:
 
-## Symbols (базовый набор)
-
-| Символ | Тег | Тип | Эффект | Rarity |
-|--------|-----|-----|--------|--------|
-| Dagger | `weapon` | damage | Физический урон | Common |
-| Shield | `shield` | defense | +Броня | Common |
-| Coin | `coin` | economy | +Tokens | Common |
-| Energizer | `magic` | damage | Магический (игнорирует броню врага) | Rare |
-| Bomb | `explosive` | damage | Большой урон, тригерит синергии | Epic |
-| Diamond | `diamond` | special | Экономика + синергия с weapon | Epic |
-
-**Уровни (1–3):** повышают базовый эффект при апгрейде.
+- Bomb persistence — это свойство самого символа, а не общей системы синергий
 
 ---
 
-## Shop System (POST_COMBAT_REWARD → SHOP)
+## Shop and Run Economy
 
-После победы игрок получает:
-1. **Tokens** — за убийство
-2. **Symbol choice** — выбор 1 из N новых символов (добавляется в пул барабана)
-3. **Relic chance** — шанс найти пассивный артефакт
-4. **Heal node possibility** — шанс восстановить HP
+### Монеты
 
-В магазине (SHOP):
-- Купить символ → добавить в пул барабана
-- **Удалить символ** → уменьшить пул → выше вероятность нужных синергий
-- Улучшить символ (Level Up): `symbol.level++`
-- Купить реликвию
+Монеты = валюта **только текущего забега**.
 
-**Symbol removal = deck-thinning. Ключевой roguelite-механике.**
+Источники:
+
+- символ `Coin`
+- награда за победу
+- отдельные эффекты и синергии
+
+Ограничение:
+
+- кошелек всегда в диапазоне `0..100`
+
+### Магазин
+
+Shop открывается **автоматически после победы над врагом**.
+
+В магазине доступны:
+
+- покупка новых символов
+- покупка пассивных power-ups
+- разовые улучшения статов на текущий ран
+- удаление символов из пула
+- замена слабых стартовых символов
+
+### Removal Rule
+
+Удаление символов — обязательная часть deck-thinning, но:
+
+- нельзя опускаться ниже 3 символов в активном пуле
+
+### Combat Economy
+
+Часть предметов и power-ups может требовать трату монет **во время боя**:
+
+- реролл
+- форсированный timed effect
+- активация аксессуара
 
 ---
 
 ## Meta Progression
 
-**Chips** начисляются после рана (победа или смерть).
+### Chips
 
-В главном меню: трата на Modifier'ы.  
-Перед раном: **бесплатный полный респек** (Refund All).
+`chips` — постоянная валюта между забегами.
 
-```
-Modifiers влияют на:
-  base hp
-  reel count (3 → 4 → 5)
-  symbol rarity weights
+Источники:
 
-Modifiers НЕ влияют на пул символов напрямую.
-```
+- победы над врагами
+- боссы
+- завершение рана
 
-| Modifier | chips | Эффект |
-|----------|-------|--------|
-| Physical Strength | 50 | +20% физического урона |
-| Health Core | 25 | +базовый HP |
-| Reel Slot | 100 | +1 барабан (до 5) |
-| Token Collector | 40 | +токены от Coin-символов |
+### Meta Modules
+
+Мета-магазин находится в главном меню и визуально подается как модули автомата.
+
+Ключевые постоянные бонусы:
+
+- стартовое HP
+- снижение входящего урона
+- extra life / revive
+- 4-й и 5-й барабаны
+- снижение цен во внутриигровом магазине
+
+### Refund
+
+Полный `Refund All` обязателен:
+
+- игрок может в любой момент вернуть chips
+- затем перераспределить мета-прокачку под другой билд
+
+---
+
+## Content Direction
+
+Обязательный базовый набор для приближения к оригиналу:
+
+- `Rusty Dagger`
+- `Wooden Shield`
+- `Coin`
+- `Bomb`
+- `Axe`
+- `Diamond`
+- `Sawblade`
+
+Допускаются дополнительные символы, если они не ломают core loop и не подменяют оригинальные архетипы.
 
 ---
 
 ## World Map
 
-Генерируется процедурно каждый ран. Без возврата (no backtracking).
+Карта мира остается процедурной и без backtracking.
 
-Типы узлов: `combat` / `elite` / `shop` / `heal` / `boss`  
-Зоны: Swamp → Sewer → Citadel (нарастающая сложность)
+Типы узлов:
+
+- `combat`
+- `elite`
+- `shop`
+- `heal`
+- `boss`
+
+Но ядро игры находится не в карте, а в боевом slot-loop.
 
 ---
 
-## Build Philosophy
+## Atmosphere and Game Feel
 
-**Build = evolving symbol pool.**
+Это второй приоритет после core loop, но он обязателен для финального ощущения:
 
-NOT: level, skill tree, класс.
-
-Прогресс = добавление/удаление/апгрейд символов + реликвий.
+- автомат стоит на деревянном столе в подпольной таверне
+- награды физически вылетают из автомата
+- монеты звенят и отскакивают
+- green chips выстреливают отдельно
+- на фоне слышен crowd murmur
+- на сильных комбо толпа cheer'ит
 
 ---
 
 ## What the game does NOT have
 
-- ❌ Paylines / slot bets / free spins
+- ❌ Auto-stop
+- ❌ Start shop before first combat
+- ❌ Dungeon grid as main gameplay surface
 - ❌ Class selection
-- ❌ `player.attack` stat
-- ❌ Persistent armor (сбрасывается каждый ход)
-- ❌ Random enemy attacks (все детерминированы)
-- ❌ Multiplayer
-- ❌ Casino roguelike mechanics
+- ❌ `player.attack`
+- ❌ Persistent armor between turns
+- ❌ Random hidden enemy actions
+- ❌ Abstract economy detached from the machine
