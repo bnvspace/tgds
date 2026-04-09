@@ -29,6 +29,7 @@ export type Rarity = 'common' | 'rare' | 'epic'
 export type SymbolTag =
   | 'weapon' | 'magic' | 'explosive'
   | 'coin' | 'shield' | 'diamond' | 'poison' | 'heal'
+  | 'axe' | 'sawblade'
 
 // ── Zone types ───────────────────────────────────────────
 export type ZoneType = 'swamp' | 'sewer' | 'citadel'
@@ -43,6 +44,9 @@ export interface SymbolEffect {
   tokens?: number
   poisonStacks?: number  // stacks added to enemy; each stack = 3 dmg/turn, ignores armor
   stunTurns?: number     // turns the enemy is stunned (skips enemy action)
+  isBomb?: boolean       // persistent charge: damage grows each fight
+  isAxe?: boolean        // bonus damage scales with enemy armor
+  isSawblade?: boolean   // forces neighbors to perfect timing post-stop
 }
 
 export interface GameSymbol {
@@ -136,6 +140,8 @@ export interface SpinResult {
   poisonStacksApplied: number  // stacks added to enemy this spin
   stunApplied: boolean         // whether stun was applied this spin
   bestTimingTier: TimingTier | null
+  rerollsApplied: number[]     // reel indices rerolled by Diamond or forced-perfect by Sawblade
+  bombChargeGained: number     // how much bombCharge was added this spin
 }
 
 // ── Enemy ────────────────────────────────────────────────

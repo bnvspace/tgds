@@ -50,6 +50,12 @@ const ENERGIZER: GameSymbol = {
   effect: { magicDamage: 15 },
 }
 
+/**
+ * Bomb — run-persistent scaling symbol
+ * Base damage = 10. Each spin with Bomb accumulates +1 bombCharge (persists across fights).
+ * Total damage = baseDamage + player.bombCharge × BOMB_PER_CHARGE_DMG (4)
+ * After 6 charges: 10 + 6×4 = 34 physical damage.
+ */
 const BOMB: GameSymbol = {
   id: 'bomb',
   name: 'Bomb',
@@ -58,9 +64,33 @@ const BOMB: GameSymbol = {
   rarity: 'epic',
   level: 1,
   tags: ['explosive'],
-  effect: { damage: 25 },
+  effect: { damage: 10, isBomb: true },
 }
 
+/**
+ * Axe — armor counter
+ * Deals baseAxeDamage + enemy.armor × AXE_ARMOR_MULT (1.5) physical damage.
+ * The more armor the enemy has, the harder the Axe hits.
+ * Against Iron Golem (armor 20): 8 + 20×1.5 = 38 physical damage.
+ */
+const AXE: GameSymbol = {
+  id: 'axe',
+  name: 'Axe',
+  icon: symbolIconById.dagger,  // Reuse dagger icon until dedicated asset is added
+  type: 'damage',
+  rarity: 'rare',
+  level: 1,
+  tags: ['axe', 'weapon'],
+  effect: { damage: 8, isAxe: true },
+}
+
+/**
+ * Diamond — post-stop reroll
+ * After all reels are stopped, Diamond rerolls the reel immediately to its right
+ * if that reel's timing is not 'perfect'. The rerolled reel gets a new random
+ * symbol from the player's inventory and 'ok' timing.
+ * Effectively gives a second chance on poor stops.
+ */
 const DIAMOND: GameSymbol = {
   id: 'diamond',
   name: 'Diamond',
@@ -69,7 +99,7 @@ const DIAMOND: GameSymbol = {
   rarity: 'epic',
   level: 1,
   tags: ['diamond'],
-  effect: { tokens: 8, damage: 5 },
+  effect: { tokens: 5 },
 }
 
 const POISON_VIAL: GameSymbol = {
@@ -105,6 +135,23 @@ const HEALTH_POTION: GameSymbol = {
   effect: { heal: 15 },
 }
 
+/**
+ * Sawblade — guaranteed crit enabler
+ * After all reels stop, Sawblade forces both neighboring reels (left and right)
+ * to 'perfect' timing. The symbols remain the same but get full damage multiplier (×2).
+ * Sawblade itself deals no damage — it's a pure combat utility.
+ */
+const SAWBLADE: GameSymbol = {
+  id: 'sawblade',
+  name: 'Sawblade',
+  icon: symbolIconById.energizer,  // Reuse energizer icon until dedicated asset
+  type: 'special',
+  rarity: 'epic',
+  level: 1,
+  tags: ['sawblade'],
+  effect: { isSawblade: true },
+}
+
 export const ALL_SYMBOLS: GameSymbol[] = [
   DAGGER,
   SHIELD_SYM,
@@ -115,6 +162,8 @@ export const ALL_SYMBOLS: GameSymbol[] = [
   POISON_VIAL,
   MAGIC_SCROLL,
   HEALTH_POTION,
+  AXE,
+  SAWBLADE,
 ]
 
 export const STARTER_REELS: Reel[] = [

@@ -3,7 +3,7 @@ import type { GamePhase, GameSymbol, TimingTier, TimingResult } from '@/types'
 import { useGameStore } from '@/store/gameStore'
 import { useTranslation } from '@/i18n'
 import { spin } from '@/game/slotGenerator'
-import { resolveSymbols } from '@/game/resolution'
+import { resolveSymbols, preResolveModifiers } from '@/game/resolution'
 import { evaluateStopTiming } from '@/game/skillCheck'
 import {
   playButtonSFX,
@@ -205,14 +205,22 @@ export function useCombatFlow() {
     }
   }, [enemy, player, setPhase, t])
 
-  async function resolveSpinOutcome(symbols: GameSymbol[], timingResults: TimingResult[]) {
+  async function resolveSpinOutcome(symbols: GameSymbol[], rawTimings: TimingResult[]) {
     if (!player || !enemy) return
 
     pendingRef.current = []
     setCombatPhase('resolving')
     syncCombatStorePhase('resolving')
 
-    const result = resolveSymbols(symbols, timingResults, player)
+    // Apply pre-resolve modifiers: Diamond reroll + Sawblade force-perfect
+    const { symbols: modSymbols, timings: modTimings, rerollsApplied } =
+      preResolveModifiers(symbols, rawTimings, player.symbolInventory)
+
+    if (rerollsApplied.length > 0) {
+      log(`🔄 ${t('reroll_applied')} [${rerollsApplied.map((i) => i + 1).join(', ')}]`)
+    }
+
+    const result = resolveSymbols(modSymbols, modTimings, player, enemy, rerollsApplied)
 
     applySpinResult(result)
     // Pass physical/magic separately so store can apply enemy armor
@@ -273,6 +281,7 @@ export function useCombatFlow() {
       result.totalArmor > 0 ? `${t('armor_short')} +${result.totalArmor}` : null,
       result.totalTokens > 0 ? `${t('tokens_short')} +${result.totalTokens}` : null,
       result.totalHeal > 0 ? `${t('heal_short')} +${result.totalHeal}` : null,
+      result.bombChargeGained > 0 ? `💣 ${t('bomb_charge')} +${result.bombChargeGained}` : null,
     ].filter(Boolean).join('  ')
 
     if (logLine) {

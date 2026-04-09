@@ -21,7 +21,7 @@ import { haptics } from '@/utils/haptics'
 
 const DEFAULT_META: MetaProgress = {
   totalChips: 100, // Starting chips so modifiers are immediately usable
-  unlockedSymbolIds: ['dagger', 'shield', 'coin', 'energizer', 'bomb', 'diamond'],
+  unlockedSymbolIds: ['dagger', 'shield', 'coin', 'energizer', 'bomb', 'diamond', 'axe', 'sawblade'],
   unlockedStarterSymbolIds: [...BASE_STARTER_SYMBOL_IDS],
   allocatedModifiers: [],
   language: 'ru', // Default language
@@ -48,8 +48,10 @@ const SYMBOL_UNLOCK_MILESTONES = [
 ] as const
 const STARTER_SYMBOL_UNLOCK_MILESTONES = [
   { fightsWon: 2, symbolId: 'energizer' },
+  { fightsWon: 3, symbolId: 'axe' },
   { fightsWon: 4, symbolId: 'bomb' },
   { fightsWon: 6, symbolId: 'diamond' },
+  { fightsWon: 8, symbolId: 'sawblade' },
 ] as const
 
 function hashString(value: string) {
@@ -473,6 +475,7 @@ export const useGameStore = create<GameStore>()(
           armor: p.armor + result.totalArmor,
           hp: Math.min(p.maxHp, p.hp + result.totalHeal),
           tokens: Math.min(100, p.tokens + result.totalTokens),
+          bombCharge: p.bombCharge + result.bombChargeGained,
         },
         lastSpinResult: result,
       }

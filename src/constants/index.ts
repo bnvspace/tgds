@@ -26,6 +26,9 @@ export const BALANCE = {
   BOSS_XP_MULTIPLIER: 5,
   HEAL_POTION_AMOUNT: 20,
   ATTACK_BONUS_AMOUNT: 5,
+  BOMB_PER_CHARGE_DMG: 4,    // additional damage per accumulated bombCharge
+  AXE_ARMOR_MULT: 1.5,       // Axe bonus damage = enemy.armor × this
+  AXE_BASE_DAMAGE: 8,        // base physical damage of Axe before armor scaling
 } as const
 
 // ── Timing Skill Check ───────────────────────────────────

@@ -1,4 +1,5 @@
-import type { GameSymbol, MatchGroup, Player, QTEResult, SpinResult, Synergy, TimingResult } from '@/types'
+import { BALANCE } from '@/constants'
+import type { Enemy, GameSymbol, MatchGroup, Player, QTEResult, SpinResult, Synergy, TimingResult, WeightedSymbol } from '@/types'
 import { detectSynergies } from './synergies'
 import { getSymbolTimingMultiplier, bestWeaponTiming, makeDefaultTiming } from './skillCheck'
 
@@ -31,6 +32,88 @@ function detectMatchGroups(symbols: GameSymbol[]): MatchGroup[] {
     }))
 }
 
+/** Pick a random symbol from an inventory using weighted selection */
+function weightedRandomSymbol(inventory: WeightedSymbol[]): GameSymbol {
+  const total = inventory.reduce((sum, entry) => sum + entry.weight, 0)
+  let roll = Math.random() * total
+
+  for (const entry of inventory) {
+    roll -= entry.weight
+    if (roll <= 0) return entry.symbol
+  }
+
+  return inventory[inventory.length - 1]!.symbol
+}
+
+/** Make a forced-perfect timing result */
+function makePerfectTiming(): TimingResult {
+  return { tier: 'perfect', multiplier: 2.0, offset: 0 }
+}
+
+/**
+ * Pre-resolve modifiers — apply Diamond and Sawblade effects BEFORE resolution.
+ *
+ * Diamond (id='diamond'): rerolls the reel immediately to the right if that reel
+ * has non-perfect timing. New symbol is drawn from inventory; timing stays 'ok'.
+ *
+ * Sawblade (effect.isSawblade): forces both neighbors (left + right) to 'perfect'
+ * timing. The symbols stay, but get ×2 damage multiplier.
+ *
+ * Returns modified copies of symbols and timings, plus which reel indices were affected.
+ */
+export function preResolveModifiers(
+  symbols: GameSymbol[],
+  timings: TimingResult[],
+  inventory: WeightedSymbol[],
+): { symbols: GameSymbol[]; timings: TimingResult[]; rerollsApplied: number[] } {
+  const resultSymbols = [...symbols]
+  const resultTimings = [...timings]
+  const rerollsApplied: number[] = []
+
+  if (inventory.length === 0) {
+    return { symbols: resultSymbols, timings: resultTimings, rerollsApplied }
+  }
+
+  for (let i = 0; i < resultSymbols.length; i++) {
+    const symbol = resultSymbols[i]
+    if (!symbol) continue
+
+    // Sawblade: force both neighbors to perfect
+    if (symbol.effect.isSawblade) {
+      const neighbors = [i - 1, i + 1]
+
+      for (const ni of neighbors) {
+        if (ni >= 0 && ni < resultSymbols.length) {
+          resultTimings[ni] = makePerfectTiming()
+          if (!rerollsApplied.includes(ni)) rerollsApplied.push(ni)
+        }
+      }
+    }
+  }
+
+  for (let i = 0; i < resultSymbols.length; i++) {
+    const symbol = resultSymbols[i]
+    if (!symbol) continue
+
+    // Diamond: reroll right neighbor if not perfect
+    if (symbol.id === 'diamond') {
+      const rightIdx = i + 1
+
+      if (rightIdx < resultSymbols.length) {
+        const rightTiming = resultTimings[rightIdx]
+
+        if (rightTiming && rightTiming.tier !== 'perfect') {
+          resultSymbols[rightIdx] = weightedRandomSymbol(inventory)
+          resultTimings[rightIdx] = makeDefaultTiming()
+          if (!rerollsApplied.includes(rightIdx)) rerollsApplied.push(rightIdx)
+        }
+      }
+    }
+  }
+
+  return { symbols: resultSymbols, timings: resultTimings, rerollsApplied }
+}
+
 /**
  * Resolve symbols using per-reel timing results.
  *
@@ -39,6 +122,9 @@ function detectMatchGroups(symbols: GameSymbol[]): MatchGroup[] {
  *   - magic    → bypasses armor
  *   - poison   → stacks applied to enemy; ticks as DoT, bypasses armor
  *   - stun     → enemy skips next action
+ *   - bomb     → base + player.bombCharge × BOMB_PER_CHARGE_DMG (physical)
+ *   - axe      → base + enemy.armor × AXE_ARMOR_MULT (physical)
+ *   - sawblade → no direct damage; forces neighbor perfect timing (handled in preResolveModifiers)
  *
  * Timing multipliers apply ONLY to weapon/explosive physical and magic damage.
  * Armor, heal, tokens, poison stacks are NEVER affected by timing.
@@ -47,6 +133,8 @@ export function resolveSymbols(
   symbols: GameSymbol[],
   timingResults: TimingResult[],
   player: Player,
+  enemy: Enemy | null = null,
+  rerollsApplied: number[] = [],
 ): SpinResult {
   const physicalStrengthRanks = player.metaModifiers
     .filter((modifier) => modifier.id === 'physical_strength')
@@ -73,6 +161,7 @@ export function resolveSymbols(
   let baseHeal = 0
   let poisonStacksApplied = 0
   let stunApplied = false
+  let bombChargeGained = 0
 
   // Per-symbol accumulation with timing multipliers on damage
   let totalTimingWeightedDamage = 0
@@ -86,7 +175,20 @@ export function resolveSymbols(
     const matchMultiplier = matchMultipliers.get(symbol.id) ?? 1
     const timingMultiplier = getSymbolTimingMultiplier(symbol, timings[i] ?? makeDefaultTiming())
 
-    const symbolDamage = (effect.damage ?? 0) * symbol.level * matchMultiplier
+    // ── Base damage ──────────────────────────────────────────
+    let symbolDamage = (effect.damage ?? 0) * symbol.level * matchMultiplier
+
+    // Bomb: add persistent charge bonus on top of base damage
+    if (effect.isBomb) {
+      symbolDamage += player.bombCharge * BALANCE.BOMB_PER_CHARGE_DMG
+      bombChargeGained += 1  // increment once per bomb in spin
+    }
+
+    // Axe: add armor-scaling bonus
+    if (effect.isAxe && enemy && enemy.armor > 0) {
+      symbolDamage += Math.floor(enemy.armor * BALANCE.AXE_ARMOR_MULT)
+    }
+
     const symbolMagicDamage = (effect.magicDamage ?? 0) * symbol.level * matchMultiplier
 
     baseDamage += symbolDamage
@@ -169,5 +271,7 @@ export function resolveSymbols(
     poisonStacksApplied: Math.round(poisonStacksApplied),
     stunApplied,
     bestTimingTier: bestTier,
+    rerollsApplied,
+    bombChargeGained,
   }
 }
