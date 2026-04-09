@@ -1,10 +1,9 @@
 import type { CSSProperties } from 'react'
 import { motion } from 'framer-motion'
-import { symbolIconById, zoneBackdropByZone } from '@/assets/pixelArt'
+import { zoneBackdropByZone } from '@/assets/pixelArt'
 import EnemyDisplay from '@/components/EnemyDisplay'
-import GameIcon from '@/components/GameIcon'
 import SlotMachine from '@/components/SlotMachine'
-import QTEBar from '@/components/QTEBar'
+import TimingFeedback from '@/components/TimingFeedback'
 import { useTranslation } from '@/i18n'
 import { useCombatFlow } from '@/hooks/useCombatFlow'
 import styles from './CombatScreen.module.css'
@@ -22,9 +21,9 @@ export default function CombatScreen() {
     playerHpPercent,
     canTriggerSpin,
     canFlee,
-    qteSessionId,
+    lastTimingTier,
+    timingFeedbackKey,
     handleSpin,
-    handleQTEResult,
     handleFlee,
     confirmFlee,
     cancelFlee,
@@ -92,6 +91,8 @@ export default function CombatScreen() {
         </div>
       </section>
 
+      {/* Battle feed hidden — re-enable when screen layout is reworked */}
+      {false && (
       <section className={styles.feedPanel} aria-label={t('battle_feed')}>
         <div className={styles.feedHeader}>
           <span className={styles.feedTitle}>{t('battle_feed')}</span>
@@ -105,6 +106,7 @@ export default function CombatScreen() {
           ))}
         </div>
       </section>
+      )}
 
       {showFleeConfirm && (
         <div className={styles.fleeOverlay}>
@@ -123,43 +125,20 @@ export default function CombatScreen() {
         </div>
       )}
 
-      <div className={styles.qteDock}>
-        {(combatPhase === 'qte_active' || combatPhase === 'resolving') ? (
-          <div className={styles.qteWrap}>
-            <QTEBar
-              key={`qte-${qteSessionId}`}
-              active={combatPhase === 'qte_active'}
-              onResult={handleQTEResult}
-            />
-          </div>
-        ) : (
-          <div className={`${styles.qteWrap} ${styles.qteIdleWrap}`} aria-hidden="true">
-            <div className={styles.qteIdleBar}>
-              <div className={styles.qteIdleBackdrop} />
-              <div className={styles.qteIdleZone} data-tone="hit" />
-              <div className={styles.qteIdleZone} data-tone="crit" />
-              <div className={styles.qteIdleZone} data-tone="mega" />
-              <div className={styles.qteIdleSeal}>
-                <GameIcon
-                  icon={symbolIconById.diamond}
-                  alt=""
-                  decorative
-                  className={styles.qteIdleSealIcon}
-                />
-              </div>
-              <span className={styles.qteIdleHint}>{t('qte_wait_hint')}</span>
-            </div>
-          </div>
-        )}
+      <div className={styles.slotWrap}>
+        <TimingFeedback
+          tier={lastTimingTier}
+          sessionKey={timingFeedbackKey}
+        />
+        <SlotMachine
+          ref={slotRef}
+          reelCount={player.reels.length}
+          symbolPool={player.symbolInventory.map((entry) => entry.symbol)}
+          isSpinning={combatPhase === 'spinning'}
+          onSpin={handleSpin}
+          disabled={!canTriggerSpin}
+        />
       </div>
-
-      <SlotMachine
-        ref={slotRef}
-        reels={player.reels}
-        isSpinning={combatPhase === 'spinning'}
-        onSpin={handleSpin}
-        disabled={!canTriggerSpin}
-      />
     </div>
   )
 }

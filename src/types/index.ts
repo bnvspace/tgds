@@ -41,6 +41,8 @@ export interface SymbolEffect {
   armor?: number         // added to player.armor this turn
   heal?: number
   tokens?: number
+  poisonStacks?: number  // stacks added to enemy; each stack = 3 dmg/turn, ignores armor
+  stunTurns?: number     // turns the enemy is stunned (skips enemy action)
 }
 
 export interface GameSymbol {
@@ -55,7 +57,7 @@ export interface GameSymbol {
 }
 
 // ── Reel ─────────────────────────────────────────────────
-// Each reel = independent weighted pool. NOT a grid.
+// Each reel is a physical stop slot. Rolls use the shared player inventory.
 export interface WeightedSymbol {
   symbol: GameSymbol
   weight: number         // determines probability
@@ -63,11 +65,10 @@ export interface WeightedSymbol {
 
 export interface Reel {
   id: string
-  symbolPool: WeightedSymbol[]
 }
-// spin = reels.map(reel => weightedRandom(reel.symbolPool))
+// spin = Array.from({ length: reelCount }, () => weightedRandom(player.symbolInventory))
 
-// ── QTE ──────────────────────────────────────────────────
+// ── QTE (legacy — kept for migration) ────────────────────
 // QTE multiplier applies ONLY to damage. Not armor/gold/heal.
 export type QTETier = 'miss' | 'hit' | 'crit' | 'mega_crit'
 export const QTE_MULTIPLIERS: Record<QTETier, number> = {
@@ -80,6 +81,16 @@ export const QTE_MULTIPLIERS: Record<QTETier, number> = {
 export interface QTEResult {
   tier: QTETier
   multiplier: 1 | 1.5 | 2 | 3
+}
+
+// ── Timing Skill Check (replaces QTE) ────────────────────
+// Evaluated per-reel on manual stop. Multiplier applies ONLY to damage.
+export type TimingTier = 'perfect' | 'good' | 'ok'
+
+export interface TimingResult {
+  tier: TimingTier
+  multiplier: number
+  offset: number  // normalized 0..1 distance from ideal
 }
 
 // ── Synergy ──────────────────────────────────────────────
@@ -106,18 +117,25 @@ export interface MatchGroup {
 // ── Symbol Resolution (7-step pipeline) ──────────────────
 export interface SpinResult {
   rolledSymbols: GameSymbol[]  // one per reel (NOT a grid!)
-  qte: QTEResult
+  qte: QTEResult               // legacy, kept for log display compat
+  timingResults: TimingResult[] // per-reel timing from manual stop
   matchGroups: MatchGroup[]
   // Resolution steps output:
-  baseDamage: number           // step 2
+  baseDamage: number           // step 2 — physical
+  baseMagicDamage: number      // step 2 — magic
   baseArmor: number
   baseTokens: number
   baseHeal: number
   synergiesActivated: Synergy[] // step 3
-  totalDamage: number          // steps 2-7 applied
-  totalArmor: number           // QTE does NOT affect this
-  totalTokens: number          // QTE does NOT affect this
-  totalHeal: number            // QTE does NOT affect this
+  totalDamage: number          // combined for backward compat
+  totalPhysicalDamage: number  // blocked by enemy armor
+  totalMagicDamage: number     // bypasses enemy armor
+  totalArmor: number           // timing does NOT affect this
+  totalTokens: number          // timing does NOT affect this
+  totalHeal: number            // timing does NOT affect this
+  poisonStacksApplied: number  // stacks added to enemy this spin
+  stunApplied: boolean         // whether stun was applied this spin
+  bestTimingTier: TimingTier | null
 }
 
 // ── Enemy ────────────────────────────────────────────────
@@ -152,6 +170,7 @@ export interface Enemy {
   zone: ZoneType
   hp: number
   maxHp: number
+  armor: number          // physical damage reduction per hit (NOT cumulative per turn)
   // DETERMINISTIC cycle — patternIndex increments each turn, wraps around
   attackPattern: AttackPattern[]
   patternIndex: number
@@ -167,6 +186,7 @@ export interface Player {
   maxHp: number
   armor: number         // resets at the start of PLAYER_SPIN_PHASE
   reels: Reel[]
+  symbolInventory: WeightedSymbol[]
   relics: Relic[]
   tokens: number
   bombCharge: number

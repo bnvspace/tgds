@@ -61,6 +61,48 @@
   border: 1px solid rgba(200, 169, 110, 0.3);
 }
 
+.tokenCap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 80px;
+  padding: 6px 10px;
+  background: rgba(18, 18, 30, 0.94);
+  border: 1px solid rgba(200, 169, 110, 0.3);
+}
+
+.tokenCap[data-capped='true'] {
+  border-color: rgba(231, 76, 60, 0.6);
+  box-shadow: 0 0 6px rgba(231, 76, 60, 0.2);
+}
+
+.tokenCapLabel {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.tokenCapMax {
+  color: var(--color-text-muted);
+}
+
+.tokenBar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.tokenFill {
+  height: 100%;
+  background: linear-gradient(90deg, #c8a96e, #f0d090);
+  transition: width 0.3s ease;
+}
+
+.tokenCap[data-capped='true'] .tokenFill {
+  background: #e05252;
+}
+
 .activeSection {
   position: relative;
   display: flex;

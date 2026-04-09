@@ -10,6 +10,8 @@ import type {
   SpinResult,
   MetaProgress,
   GameSymbol,
+  WeightedSymbol,
+  Reel,
 } from '@/types'
 import type { ModifierId } from '@/types'
 import { ALL_SYMBOLS, BASE_STARTER_SYMBOL_IDS, STARTER_REELS } from '@/game/symbols'
@@ -64,17 +66,103 @@ function nextSeed(seed: number) {
   return (seed * 1664525 + 1013904223) >>> 0
 }
 
-function buildStarterReels(reelCount: number) {
-  return Array.from({ length: reelCount }, (_, index) => {
-    const template = STARTER_REELS[index % STARTER_REELS.length]
+function buildReels(reelCount: number): Reel[] {
+  return Array.from({ length: reelCount }, (_, index) => ({
+    id: `reel_${index + 1}`,
+  }))
+}
 
-    return {
-      id: `reel_${index + 1}`,
-      symbolPool: template.symbolPool.map((weightedSymbol) => ({
-        ...weightedSymbol,
-      })),
+function cloneInventory(inventory: WeightedSymbol[]): WeightedSymbol[] {
+  return inventory.map((entry) => ({
+    symbol: entry.symbol,
+    weight: entry.weight,
+  }))
+}
+
+function buildInventoryFromSelection(selected: GameSymbol[]): WeightedSymbol[] {
+  return selected.map((symbol) => ({
+    symbol,
+    weight: 10,
+  }))
+}
+
+function buildInventoryFromLegacyReels(
+  reels: Array<{ symbolPool?: Array<{ symbol: GameSymbol; weight: number }> }> | undefined,
+): WeightedSymbol[] {
+  if (!reels || reels.length === 0) {
+    return []
+  }
+
+  const totals = new Map<string, { symbol: GameSymbol; total: number; presence: number }>()
+
+  for (const reel of reels) {
+    const localCounts = new Map<string, { symbol: GameSymbol; count: number }>()
+
+    for (const weightedSymbol of reel.symbolPool ?? []) {
+      const current = localCounts.get(weightedSymbol.symbol.id)
+
+      if (current) {
+        current.count += 1
+        continue
+      }
+
+      localCounts.set(weightedSymbol.symbol.id, {
+        symbol: weightedSymbol.symbol,
+        count: 1,
+      })
     }
+
+    for (const [symbolId, entry] of localCounts) {
+      const totalEntry = totals.get(symbolId)
+
+      if (totalEntry) {
+        totalEntry.total += entry.count
+        totalEntry.presence += 1
+        continue
+      }
+
+      totals.set(symbolId, {
+        symbol: entry.symbol,
+        total: entry.count,
+        presence: 1,
+      })
+    }
+  }
+
+  return Array.from(totals.values()).flatMap((entry) => {
+    const sharedCopies = entry.presence === reels.length
+      ? Math.max(1, entry.total - (reels.length - 1))
+      : entry.total
+
+    return Array.from({ length: sharedCopies }, () => ({
+      symbol: entry.symbol,
+      weight: 10,
+    }))
   })
+}
+
+function normalizePlayerInventory(
+  player: (Partial<Player> & {
+    reels?: Array<{ id?: string; symbolPool?: Array<{ symbol: GameSymbol; weight: number }> }>
+    symbolInventory?: WeightedSymbol[]
+  }) | null | undefined,
+): Player | null {
+  if (!player) {
+    return null
+  }
+
+  const reelCount = Math.min(CONFIG.MAX_REELS, Math.max(STARTER_REELS.length, player.reels?.length ?? STARTER_REELS.length))
+  const legacyInventory = buildInventoryFromLegacyReels(player.reels)
+  const symbolInventory = player.symbolInventory && player.symbolInventory.length > 0
+    ? cloneInventory(player.symbolInventory)
+    : legacyInventory
+
+  return {
+    ...DEFAULT_PLAYER,
+    ...player,
+    reels: buildReels(reelCount),
+    symbolInventory,
+  }
 }
 
 const DEFAULT_PLAYER: Player = {
@@ -82,6 +170,7 @@ const DEFAULT_PLAYER: Player = {
   maxHp: 100,
   armor: 0,
   reels: STARTER_REELS,
+  symbolInventory: [],
   relics: [],
   tokens: 0,
   bombCharge: 0,
@@ -164,13 +253,11 @@ function normalizePersistedPhase(
 function pickRewardSymbols(enemy: Enemy, player: Player, unlockedSymbolIds: string[]) {
   const symbolCounts = new Map<string, number>()
 
-  for (const reel of player.reels) {
-    for (const weightedSymbol of reel.symbolPool) {
-      symbolCounts.set(
-        weightedSymbol.symbol.id,
-        (symbolCounts.get(weightedSymbol.symbol.id) ?? 0) + 1,
-      )
-    }
+  for (const weightedSymbol of player.symbolInventory) {
+    symbolCounts.set(
+      weightedSymbol.symbol.id,
+      (symbolCounts.get(weightedSymbol.symbol.id) ?? 0) + 1,
+    )
   }
 
   const pool = ALL_SYMBOLS
@@ -259,9 +346,11 @@ interface GameStore extends GameState {
   resetPlayerArmor: () => void
   applySpinResult: (result: SpinResult) => void
 
-  // ── Enemy mutations ────────────────────────────────────
+  // ── Enemy mutations ───────────────────────────────────────
   setEnemy: (enemy: Enemy) => void
-  applyDamageToEnemy: (damage: number) => void
+  applyDamageToEnemy: (damage: { physical: number; magic: number }) => void
+  applyStatusToEnemy: (poisonStacks: number, stunTurns: boolean) => void
+  tickEnemyStatuses: () => { poisonDamage: number; wasStunned: boolean }
   advanceEnemyPattern: () => void
   recordCombatVictory: (enemy: Enemy, combatLog: string[]) => void
 
@@ -277,8 +366,8 @@ interface GameStore extends GameState {
   setReelsFromSelection: (selected: GameSymbol[]) => void
 
   // ── Shop (mid-run) ─────────────────────────────────────
-  addSymbolToReel: (symbol: GameSymbol, reelIndex: number) => void
-  removeSymbolFromReel: (symbolId: string, reelIndex: number) => void
+  addSymbolToInventory: (symbol: GameSymbol) => void
+  removeSymbolFromInventory: (inventoryIndex: number) => void
 
   // ── Meta ───────────────────────────────────────────────
   addChips: (amount: number) => void
@@ -312,7 +401,7 @@ export const useGameStore = create<GameStore>()(
     const reelBonus = meta.allocatedModifiers
       .filter((m) => m.modifierId === 'reel_slot')
       .reduce((sum, m) => sum + m.count, 0)
-    const reels = buildStarterReels(Math.min(CONFIG.MAX_REELS, 3 + reelBonus))
+    const reels = buildReels(Math.min(CONFIG.MAX_REELS, 3 + reelBonus))
     const map = generateWorldMap(Date.now())
 
     set({
@@ -321,6 +410,7 @@ export const useGameStore = create<GameStore>()(
         maxHp: 100 + hpBonus,
         hp: 100 + hpBonus,
         reels,
+        symbolInventory: [],
         metaModifiers: meta.allocatedModifiers.flatMap((allocation) => (
           Array.from({ length: allocation.count }, () => ({
             id: allocation.modifierId,
@@ -382,7 +472,7 @@ export const useGameStore = create<GameStore>()(
           ...p,
           armor: p.armor + result.totalArmor,
           hp: Math.min(p.maxHp, p.hp + result.totalHeal),
-          tokens: p.tokens + result.totalTokens,
+          tokens: Math.min(100, p.tokens + result.totalTokens),
         },
         lastSpinResult: result,
       }
@@ -394,16 +484,98 @@ export const useGameStore = create<GameStore>()(
     lastSpinResult: null,
   }),
 
-  applyDamageToEnemy: (damage) =>
+  applyDamageToEnemy: ({ physical, magic }) =>
     set((s) => {
       if (!s.currentEnemy) return s
+      const e = s.currentEnemy
+      // Physical is reduced by armor; magic bypasses
+      const effectivePhysical = Math.max(0, physical - e.armor)
+      const totalEffective = effectivePhysical + magic
       return {
         currentEnemy: {
-          ...s.currentEnemy,
-          hp: Math.max(0, s.currentEnemy.hp - damage),
+          ...e,
+          hp: Math.max(0, e.hp - totalEffective),
         },
       }
     }),
+
+  applyStatusToEnemy: (poisonStacks, stunApplied) =>
+    set((s) => {
+      if (!s.currentEnemy) return s
+
+      // Import inline to keep store self-contained
+      let enemy = s.currentEnemy
+
+      if (poisonStacks > 0) {
+        const existing = enemy.statusEffects.find((e) => e.type === 'poison')
+        const nextEffects = existing
+          ? enemy.statusEffects.map((e) =>
+              e.type === 'poison'
+                ? { ...e, value: e.value + poisonStacks, duration: 3 }
+                : e,
+            )
+          : [
+              ...enemy.statusEffects,
+              { type: 'poison' as const, value: poisonStacks, duration: 3 },
+            ]
+        enemy = { ...enemy, statusEffects: nextEffects }
+      }
+
+      if (stunApplied) {
+        const existing = enemy.statusEffects.find((e) => e.type === 'freeze')
+        const nextEffects = existing
+          ? enemy.statusEffects.map((e) =>
+              e.type === 'freeze'
+                ? { ...e, duration: Math.max(e.duration, 1) }
+                : e,
+            )
+          : [
+              ...enemy.statusEffects,
+              { type: 'freeze' as const, value: 0, duration: 1 },
+            ]
+        enemy = { ...enemy, statusEffects: nextEffects }
+      }
+
+      return { currentEnemy: enemy }
+    }),
+
+  tickEnemyStatuses: () => {
+    const POISON_DMG_PER_STACK = 3
+    let poisonDamage = 0
+    let wasStunned = false
+
+    useGameStore.setState((s) => {
+      if (!s.currentEnemy) return s
+      const e = s.currentEnemy
+
+      wasStunned = e.statusEffects.some(
+        (effect) => effect.type === 'freeze' && effect.duration > 0,
+      )
+
+      const nextEffects = e.statusEffects
+        .map((effect) => {
+          if (effect.type === 'poison') {
+            poisonDamage += effect.value * POISON_DMG_PER_STACK
+            return { ...effect, duration: effect.duration - 1 }
+          }
+          if (effect.type === 'freeze') {
+            return { ...effect, duration: effect.duration - 1 }
+          }
+          return effect
+        })
+        .filter((effect) => effect.duration > 0)
+
+      return {
+        currentEnemy: {
+          ...e,
+          hp: Math.max(0, e.hp - poisonDamage),
+          statusEffects: nextEffects,
+        },
+      }
+    })
+
+    return { poisonDamage, wasStunned }
+  },
 
   advanceEnemyPattern: () =>
     set((s) => {
@@ -444,7 +616,7 @@ export const useGameStore = create<GameStore>()(
       return {
         player: {
           ...s.player,
-          tokens: s.player.tokens + combatReward.tokenReward,
+          tokens: Math.min(100, s.player.tokens + combatReward.tokenReward),
           fightsWon: nextFightsWon,
         },
         meta: {
@@ -491,20 +663,12 @@ export const useGameStore = create<GameStore>()(
         const rewardSymbol = selectedOption.symbol
         if (!rewardSymbol) return s
 
-        const targetReelIndex = s.player.reels.reduce((minIndex, reel, index, reels) => (
-          reel.symbolPool.length < reels[minIndex].symbolPool.length ? index : minIndex
-        ), 0)
-
         nextPlayer = {
           ...s.player,
-          reels: s.player.reels.map((reel, index) => (
-            index === targetReelIndex
-              ? {
-                  ...reel,
-                  symbolPool: [...reel.symbolPool, { symbol: rewardSymbol, weight: 10 }],
-                }
-              : reel
-          )),
+          symbolInventory: [
+            ...s.player.symbolInventory,
+            { symbol: rewardSymbol, weight: 10 },
+          ],
         }
       }
 
@@ -518,7 +682,7 @@ export const useGameStore = create<GameStore>()(
       if (selectedOption.type === 'tokens') {
         nextPlayer = {
           ...nextPlayer,
-          tokens: nextPlayer.tokens + (selectedOption.amount ?? 0),
+          tokens: Math.min(100, nextPlayer.tokens + (selectedOption.amount ?? 0)),
         }
       }
 
@@ -530,40 +694,41 @@ export const useGameStore = create<GameStore>()(
     }),
   clearCombatReward: () => set({ lastCombatReward: null }),
 
-  // Every selected starting symbol is added to every reel so it can appear
-  // across the full slot, not only on a single lane.
   setReelsFromSelection: (selected: GameSymbol[]) =>
     set((s) => {
       if (!s.player) return s
-      const reelCount = s.player.reels.length
-      const reels = Array.from({ length: reelCount }, (_, i) => ({
-        id: `reel_${i + 1}`,
-        symbolPool: selected.map((sym) => ({ symbol: sym, weight: 10 })),
-      }))
 
-      return { player: { ...s.player, reels } }
+      return {
+        player: {
+          ...s.player,
+          symbolInventory: buildInventoryFromSelection(selected),
+        },
+      }
     }),
 
-  addSymbolToReel: (symbol, reelIndex) =>
+  addSymbolToInventory: (symbol) =>
     set((s) => {
       if (!s.player) return s
-      const reels = s.player.reels.map((r, i) =>
-        i === reelIndex
-          ? { ...r, symbolPool: [...r.symbolPool, { symbol, weight: 10 }] }
-          : r
-      )
-      return { player: { ...s.player, reels } }
+
+      return {
+        player: {
+          ...s.player,
+          symbolInventory: [...s.player.symbolInventory, { symbol, weight: 10 }],
+        },
+      }
     }),
 
-  removeSymbolFromReel: (symbolId, reelIndex) =>
+  removeSymbolFromInventory: (inventoryIndex) =>
     set((s) => {
       if (!s.player) return s
-      const reels = s.player.reels.map((r, i) =>
-        i === reelIndex
-          ? { ...r, symbolPool: r.symbolPool.filter((ws) => ws.symbol.id !== symbolId) }
-          : r
-      )
-      return { player: { ...s.player, reels } }
+      if (s.player.symbolInventory.length <= CONFIG.START_SYMBOL_COUNT) return s
+
+      return {
+        player: {
+          ...s.player,
+          symbolInventory: s.player.symbolInventory.filter((_, index) => index !== inventoryIndex),
+        },
+      }
     }),
 
   addChips: (amount) =>
@@ -635,13 +800,14 @@ export const useGameStore = create<GameStore>()(
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<GameState> | undefined
-        const player = persisted?.player ?? currentState.player
+        const player = normalizePlayerInventory(persisted?.player ?? currentState.player)
         const currentEnemy = player ? (persisted?.currentEnemy ?? currentState.currentEnemy) : null
         const lastCombatReward = persisted?.lastCombatReward ?? currentState.lastCombatReward
 
         return {
           ...currentState,
           ...persisted,
+          player,
           currentEnemy,
           lastCombatReward,
           phase: normalizePersistedPhase(
@@ -652,7 +818,7 @@ export const useGameStore = create<GameStore>()(
           ),
         }
       },
-      version: 7,
+      version: 8,
       migrate: (persistedState: unknown, version: number) => {
         if (!isPersistedGameState(persistedState)) {
           return persistedState
@@ -694,6 +860,17 @@ export const useGameStore = create<GameStore>()(
         const persistedPhase = persistedState?.phase as GamePhase | 'initial_shop' | undefined
         if (persistedPhase === 'initial_shop' && version < 7) {
           persistedState.phase = 'start_symbols'
+        }
+        if (persistedState && version < 8) {
+          persistedState.player = normalizePlayerInventory(
+            persistedState.player as
+              | (Partial<Player> & {
+                  reels?: Array<{ id?: string; symbolPool?: Array<{ symbol: GameSymbol; weight: number }> }>
+                  symbolInventory?: WeightedSymbol[]
+                })
+              | null
+              | undefined,
+          )
         }
         return persistedState
       },

@@ -67,12 +67,12 @@ export default function CombatOutcomePanel({
   ].filter((card): card is SummaryCard => card !== null)
 
   const accentChips = [
-    result && result.qte.tier !== 'miss'
+    result && result.bestTimingTier && result.bestTimingTier !== 'ok'
       ? {
-        id: `qte-${result.qte.tier}`,
+        id: `timing-${result.bestTimingTier}`,
         tone: 'qte' as const,
         icon: symbolIconById.diamond,
-        label: t(`qte_label_${result.qte.tier}`),
+        label: t(`timing_${result.bestTimingTier}`),
       }
       : null,
     ...(result?.synergiesActivated ?? []).map((synergy) => ({

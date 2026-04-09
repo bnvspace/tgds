@@ -107,7 +107,7 @@ interface GameSymbol {
 }
 
 interface Reel {
-  symbolPool: WeightedSymbol[]
+  id: string
 }
 
 interface Player {
@@ -115,6 +115,7 @@ interface Player {
   maxHp: number
   armor: number
   reels: Reel[]
+  symbolInventory: WeightedSymbol[]
   tokens: number
   bombCharge: number
 }

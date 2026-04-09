@@ -1,8 +1,4 @@
 .screen {
-  --qte-bar-height: 52px;
-  --qte-seal-size: 22px;
-  --qte-seal-icon-size: 10px;
-  --qte-label-size: 4px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -57,11 +53,6 @@
 .promptChip[data-phase='enemy_turn'] {
   color: #ffd7cf;
   border-color: rgba(231, 76, 60, 0.45);
-}
-
-.promptChip[data-phase='qte_active'] {
-  color: #d3e7ff;
-  border-color: rgba(96, 184, 232, 0.55);
 }
 
 .playerPanel {
@@ -278,114 +269,13 @@
   box-shadow: 1px 1px 0 #000;
 }
 
-.qteWrap {
-  width: 100%;
-  padding: 3px 4px;
-  background: rgba(12, 14, 22, 0.9);
-  border: 1px solid rgba(96, 184, 232, 0.28);
-  box-shadow: var(--panel-shadow-tight);
-  flex-shrink: 0;
-}
-
-.qteDock {
-  display: flex;
-  align-items: stretch;
-  flex-shrink: 0;
-}
-
-.qteIdleWrap {
-  display: flex;
-}
-
-.qteIdleBar {
+.slotWrap {
   position: relative;
-  width: 100%;
-  height: var(--qte-bar-height);
-  overflow: hidden;
-  border: 1px solid rgba(61, 21, 21, 0.94);
-  background:
-    linear-gradient(180deg, rgba(30, 16, 23, 0.98), rgba(18, 10, 17, 0.98));
-}
-
-.qteIdleBackdrop {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 12%, rgba(255, 255, 255, 0.04) 50%, transparent 88%, rgba(255, 255, 255, 0.02)),
-    linear-gradient(180deg, rgba(240, 208, 144, 0.08), transparent 30%, rgba(10, 10, 15, 0.2)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 14px);
-}
-
-.qteIdleZone {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  z-index: 1;
-}
-
-.qteIdleZone[data-tone='hit'] {
-  left: 20%;
-  width: 60%;
-  background: rgba(200, 169, 110, 0.2);
-}
-
-.qteIdleZone[data-tone='crit'] {
-  left: 35%;
-  width: 30%;
-  background: rgba(76, 175, 110, 0.26);
-}
-
-.qteIdleZone[data-tone='mega'] {
-  left: 45%;
-  width: 10%;
-  background: rgba(240, 208, 144, 0.34);
-  box-shadow: 0 0 4px rgba(240, 208, 144, 0.28);
-}
-
-.qteIdleSeal {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 2;
-  width: var(--qte-seal-size);
-  height: var(--qte-seal-size);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(240, 208, 144, 0.14), rgba(240, 208, 144, 0.02) 70%, transparent 74%);
-  border: 1px solid rgba(240, 208, 144, 0.16);
-}
-
-.qteIdleSealIcon {
-  width: var(--qte-seal-icon-size);
-  height: var(--qte-seal-icon-size);
-  object-fit: contain;
-  image-rendering: pixelated;
-  opacity: 0.68;
-}
-
-.qteIdleHint {
-  position: absolute;
-  left: 50%;
-  bottom: 2px;
-  z-index: 3;
-  transform: translateX(-50%);
-  font-family: var(--font-pixel);
-  font-size: var(--qte-label-size);
-  line-height: 1;
-  color: rgba(210, 198, 222, 0.68);
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9);
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
   .screen {
-    --qte-bar-height: 46px;
-    --qte-seal-size: 19px;
-    --qte-seal-icon-size: 8px;
-    --qte-label-size: 3px;
     gap: 8px;
     padding: 8px;
   }
@@ -407,18 +297,10 @@
   .statChips {
     justify-content: flex-start;
   }
-
-  .qteWrap {
-    padding: 1px 3px;
-  }
 }
 
 @media (max-height: 780px) {
   .screen {
-    --qte-bar-height: 44px;
-    --qte-seal-size: 18px;
-    --qte-seal-icon-size: 8px;
-    --qte-label-size: 3px;
     overflow-y: auto;
     overscroll-behavior: contain;
   }

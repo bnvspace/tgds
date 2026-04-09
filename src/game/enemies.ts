@@ -3,6 +3,7 @@ import type { Enemy, ZoneType } from '@/types'
 
 // Enemy library
 // Each enemy has a deterministic attackPattern (cycles, not random)
+// armor: physical damage reduction per hit. magic/poison ignore it.
 
 export const SWAMP_ENEMIES: Enemy[] = [
   {
@@ -12,6 +13,7 @@ export const SWAMP_ENEMIES: Enemy[] = [
     zone: 'swamp',
     hp: 80,
     maxHp: 80,
+    armor: 0,
     attackPattern: [
       { damage: 14, type: 'magical', description: 'Acid splash' },
       { damage: 10, type: 'debuff', description: 'Poison coat' },
@@ -29,11 +31,12 @@ export const SWAMP_ENEMIES: Enemy[] = [
     zone: 'swamp',
     hp: 100,
     maxHp: 100,
+    armor: 0,
     attackPattern: [
       { damage: 16, type: 'magical', description: 'Hex bolt' },
       { damage: 12, type: 'physical', description: 'Staff jab' },
       { damage: 22, type: 'magical', description: 'Poison nova' },
-      { damage: 8, type: 'debuff', description: 'Curse - weaken' },
+      { damage: 8, type: 'debuff', description: 'Curse — weaken' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -47,6 +50,7 @@ export const SWAMP_ENEMIES: Enemy[] = [
     zone: 'swamp',
     hp: 145,
     maxHp: 145,
+    armor: 5,
     attackPattern: [
       { damage: 16, type: 'physical', description: 'Vine whip' },
       { damage: 12, type: 'physical', description: 'Thorn strike' },
@@ -69,6 +73,7 @@ export const SEWER_ENEMIES: Enemy[] = [
     zone: 'sewer',
     hp: 120,
     maxHp: 120,
+    armor: 8,
     attackPattern: [
       { damage: 20, type: 'physical', description: 'Hammer swing' },
       { damage: 14, type: 'physical', description: 'Quick jab' },
@@ -87,10 +92,11 @@ export const SEWER_ENEMIES: Enemy[] = [
     zone: 'sewer',
     hp: 110,
     maxHp: 110,
+    armor: 12,
     attackPattern: [
       { damage: 15, type: 'physical', description: 'Bite frenzy' },
       { damage: 15, type: 'physical', description: 'Bite frenzy' },
-      { damage: 12, type: 'debuff', description: 'Disease - drain' },
+      { damage: 12, type: 'debuff', description: 'Disease — drain' },
       { damage: 20, type: 'physical', description: 'Swarm rush' },
     ],
     patternIndex: 0,
@@ -105,6 +111,7 @@ export const SEWER_ENEMIES: Enemy[] = [
     zone: 'sewer',
     hp: 250,
     maxHp: 250,
+    armor: 20,
     attackPattern: [
       { damage: 30, type: 'physical', description: 'Slam' },
       { damage: 18, type: 'physical', description: 'Shockwave' },
@@ -127,11 +134,12 @@ export const CITADEL_ENEMIES: Enemy[] = [
     zone: 'citadel',
     hp: 160,
     maxHp: 160,
+    armor: 15,
     attackPattern: [
       { damage: 28, type: 'physical', description: 'Dark slash' },
       { damage: 20, type: 'magical', description: 'Soul drain' },
       { damage: 24, type: 'physical', description: 'Shadow lunge' },
-      { damage: 0, type: 'debuff', description: 'Darkness - blind' },
+      { damage: 0, type: 'debuff', description: 'Darkness — blind' },
     ],
     patternIndex: 0,
     statusEffects: [],
@@ -145,9 +153,10 @@ export const CITADEL_ENEMIES: Enemy[] = [
     zone: 'citadel',
     hp: 140,
     maxHp: 140,
+    armor: 20,
     attackPattern: [
       { damage: 24, type: 'magical', description: 'Frost bolt' },
-      { damage: 0, type: 'debuff', description: 'Freeze - miss auto' },
+      { damage: 0, type: 'debuff', description: 'Freeze — miss auto' },
       { damage: 32, type: 'magical', description: 'Death coil' },
       { damage: 18, type: 'magical', description: 'Bone shard' },
     ],
@@ -163,6 +172,7 @@ export const CITADEL_ENEMIES: Enemy[] = [
     zone: 'citadel',
     hp: 400,
     maxHp: 400,
+    armor: 30,
     attackPattern: [
       { damage: 35, type: 'physical', description: 'Void strike' },
       { damage: 28, type: 'magical', description: 'Soul burst' },

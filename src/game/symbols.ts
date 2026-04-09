@@ -1,5 +1,5 @@
 import { symbolIconById } from '@/assets/pixelArt'
-import type { GameSymbol, WeightedSymbol, Reel } from '@/types'
+import type { GameSymbol, Reel } from '@/types'
 
 // Symbol definitions
 // Damage comes ONLY from symbols - NO player.attack
@@ -80,7 +80,7 @@ const POISON_VIAL: GameSymbol = {
   rarity: 'rare',
   level: 1,
   tags: ['poison', 'magic'],
-  effect: { damage: 4 },
+  effect: { poisonStacks: 2 },  // 2 stacks × 3 dmg/turn = 6 DoT, ignores armor
 }
 
 const MAGIC_SCROLL: GameSymbol = {
@@ -118,34 +118,7 @@ export const ALL_SYMBOLS: GameSymbol[] = [
 ]
 
 export const STARTER_REELS: Reel[] = [
-  {
-    id: 'reel_1',
-    symbolPool: makeWeighted([
-      { symbol: DAGGER, weight: 60 },
-      { symbol: SHIELD_SYM, weight: 30 },
-      { symbol: COIN, weight: 10 },
-    ]),
-  },
-  {
-    id: 'reel_2',
-    symbolPool: makeWeighted([
-      { symbol: SHIELD_SYM, weight: 50 },
-      { symbol: DAGGER, weight: 30 },
-      { symbol: COIN, weight: 20 },
-    ]),
-  },
-  {
-    id: 'reel_3',
-    symbolPool: makeWeighted([
-      { symbol: COIN, weight: 50 },
-      { symbol: DAGGER, weight: 30 },
-      { symbol: SHIELD_SYM, weight: 20 },
-    ]),
-  },
+  { id: 'reel_1' },
+  { id: 'reel_2' },
+  { id: 'reel_3' },
 ]
-
-function makeWeighted(
-  entries: Array<{ symbol: GameSymbol; weight: number }>
-): WeightedSymbol[] {
-  return entries
-}

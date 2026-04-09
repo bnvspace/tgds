@@ -19,13 +19,15 @@ export default function PostCombatScreen() {
 
   function effectDescription(symbol: GameSymbol) {
     const { effect } = symbol
-    const parts = []
+    const parts: string[] = []
 
     if (effect.damage) parts.push(`${effect.damage * symbol.level} ${t('dmg')}`)
-    if (effect.magicDamage) parts.push(`${effect.magicDamage * symbol.level} ${t('magic')}`)
+    if (effect.magicDamage) parts.push(`✨ ${effect.magicDamage * symbol.level} ${t('magic')}`)
     if (effect.armor) parts.push(`+${effect.armor * symbol.level} ${t('armor')}`)
     if (effect.tokens) parts.push(`+${effect.tokens * symbol.level} ${t('tokens')}`)
     if (effect.heal) parts.push(`+${effect.heal * symbol.level} ${t('heal')}`)
+    if (effect.poisonStacks) parts.push(`☠ +${effect.poisonStacks * symbol.level}/${t('turn')}`)
+    if (effect.stunTurns) parts.push(`⚡ ${t('status_stunned')}`)
 
     return parts.join('  ') || t('no_effect')
   }

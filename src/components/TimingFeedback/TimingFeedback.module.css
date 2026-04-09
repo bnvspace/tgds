@@ -1,0 +1,53 @@
+.wrap {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: feedbackPop 0.8s steps(6) forwards;
+}
+
+.label[data-tier="perfect"] {
+  color: var(--border-bright, #f0d090);
+  text-shadow:
+    0 0 4px rgba(240, 208, 144, 0.6),
+    0 0 8px rgba(240, 208, 144, 0.3);
+}
+
+.label[data-tier="good"] {
+  color: var(--accent-chip, #59b86d);
+  text-shadow: 0 0 4px rgba(89, 184, 109, 0.4);
+}
+
+@keyframes feedbackPop {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.15);
+  }
+  30% {
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.9);
+  }
+}

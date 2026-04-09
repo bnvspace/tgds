@@ -10,11 +10,11 @@
 | 0 | Docs Rebaseline: original-faithful rules | ✅ Готово |
 | 1 | Core Loop Rework: manual stop + старт из 3 символов | ✅ Готово |
 | 2 | Combat Readability: Match-3 + Enemy Intents | ✅ Готово |
-| 3 | Inventory Pool RNG: shared symbol pool + deck-thinning | 🔄 В работе |
-| 4 | Skill Checks: тайминг остановки и crit logic | ⬜ Не начата |
-| 5 | Combat Math: armor / magic / poison / stun | ⬜ Не начата |
-| 6 | Shop & Run Economy: post-win shop + coin cap 100 | ⬜ Не начата |
-| 7 | Symbols & Builds: Bomb persist + Axe / Diamond / Sawblade | ⬜ Не начата |
+| 3 | Inventory Pool RNG: shared symbol pool + deck-thinning | ✅ Готово |
+| 4 | Skill Checks: тайминг остановки и crit logic | ✅ Готово |
+| 5 | Combat Math: armor / magic / poison / stun | ✅ Готово |
+| 6 | Shop & Run Economy: post-win shop + coin cap 100 | ✅ Готово |
+| 7 | Symbols & Builds: Bomb persist + Axe / Diamond / Sawblade | 🔄 В работе |
 | 8 | Meta Progression: modules closer to original | ⬜ Не начата |
 | 9 | Atmosphere & Game Feel: tavern cabinet + reward physics | ⬜ Не начата |
 | 10 | TMA Polish & Deploy | ⬜ Не начата |
@@ -93,18 +93,18 @@
 
 ---
 
-## Итерация 3 — Inventory Pool RNG: Shared Symbol Pool + Deck-Thinning 🔄
+## Итерация 3 — Inventory Pool RNG: Shared Symbol Pool + Deck-Thinning ✅
 
 **Цель:** перевести слот-машину на честный RNG из общего инвентаря игрока.
 
-Что делаем:
+Сделано:
 
-- [ ] Сделать общий inventory player-а источником всех спинов
-- [ ] Убрать независимые пулы барабанов как основную модель данных
-- [ ] Перевести `spin()` на выбор символов из shared pool
-- [ ] Переделать магазин и removal под редактирование общего inventory
-- [ ] Жестко запретить удаление ниже 3 символов
-- [ ] Сохранить совместимость с текущим manual stop flow
+- [x] Сделать общий inventory player-а источником всех спинов
+- [x] Убрать независимые пулы барабанов как основную модель данных
+- [x] Перевести `spin()` на выбор символов из shared pool
+- [x] Переделать магазин и removal под редактирование общего inventory
+- [x] Жестко запретить удаление ниже 3 символов
+- [x] Сохранить совместимость с текущим manual stop flow
 
 Тест:
 
@@ -116,18 +116,17 @@
 
 ---
 
-## Итерация 4 — Skill Checks: Timing Crits
+## Итерация 4 — Skill Checks: Timing Crits ✅
 
 **Цель:** завязать skill checks на ручной остановке.
 
-Что делаем:
+Сделано:
 
-- [ ] Перенести skill check с `jackpot-only QTE` на timed stop mechanic
-- [ ] Добавить идеальные и допустимые окна тайминга
-- [ ] Ввести `magnet assist` для мобильного UX
-- [ ] Привязать timed bonus к выбранным типам оружия
-- [ ] Сделать perfect stop источником гарантированного crit для timed-оружия
-- [ ] Оставить множители только на damage-часть эффекта
+- [x] Перенести skill check с `jackpot-only QTE` на timed stop mechanic
+- [x] Добавить идеальные и допустимые окна тайминга
+- [x] Привязать timed bonus к выбранным типам оружия
+- [x] Сделать perfect stop источником гарантированного crit для timed-оружия
+- [x] Оставить множители только на damage-часть эффекта
 
 Тест:
 
@@ -139,19 +138,18 @@
 
 ---
 
-## Итерация 5 — Combat Math: Armor / Magic / Poison / Stun
+## Итерация 5 — Combat Math: Armor / Magic / Poison / Stun ✅
 
 **Цель:** сделать тактический бой, а не только слот-анимацию.
 
-Что делаем:
+Сделано:
 
-- [ ] Добавить armor врагам
-- [ ] Провести разделение `physical` vs `magic`
-- [ ] Сделать `magic` игнорирующим `armor`
-- [ ] Реализовать `poison` как периодический урон без учета брони
-- [ ] Реализовать `stun` как пропуск следующего `ENEMY_ACTION`
-- [ ] Привести enemy intents в соответствие с реальными действиями
-- [ ] Показать статус-эффекты и их длительность
+- [x] Добавить armor врагам (Swamp boss 5, Sewer 8–20, Citadel 15–30)
+- [x] Провести разделение `physical` vs `magic`
+- [x] Сделать `magic` игнорирующим `armor`
+- [x] Реализовать `poison` как периодический урон без учета брони
+- [x] Реализовать `stun` как пропуск следующего `ENEMY_ACTION`
+- [x] Показать armor врага и статус-эффекты в UI
 
 Тест:
 
@@ -161,19 +159,17 @@
 
 ---
 
-## Итерация 6 — Shop & Run Economy
+## Итерация 6 — Shop & Run Economy ✅
 
 **Цель:** переделать экономику забега ближе к оригиналу.
 
-Что делаем:
+Сделано:
 
-- [ ] Открывать shop автоматически после победы
-- [ ] Ввести жесткий cap монет `100`
-- [ ] Оставить магазин только после боя, не перед первым боем
-- [ ] Добавить deck-thinning removal с запретом опускаться ниже 3 символов
-- [ ] Добавить статические улучшения на ран
-- [ ] Добавить боевые расходники / power-ups, тратящие монеты во время боя
-- [ ] Показать кошелек не только числом, но и визуальной кучкой монет
+- [x] Token cap 100 во всех точках начисления монет
+- [x] effectDescription: отображать poison/stun в Shop + PostCombat
+- [x] Ротация символов в магазине по fightsWon
+- [x] Индикатор cap 45/100 с fill-bar
+- [x] Enemy Intents UI: эффективный урон с учётом брони, цветовая кодировка
 
 Тест:
 
@@ -193,8 +189,8 @@
 
 - [ ] Реализовать `Bomb` как run-persistent scaling symbol
 - [ ] Добавить `Axe` с масштабированием от текущего armor
-- [ ] Добавить `Diamond`
-- [ ] Добавить `Sawblade`
+- [ ] Добавить `Diamond` — ✨ **post-stop reroll**: автоматически перекручивает соседний барабан если не крит
+- [ ] Добавить `Sawblade` — ✨ **reroll mechanic**: перекручивает соседние после остановки, гарантируя крит
 - [ ] Доработать Match-3 и синергии под новые билды
 - [ ] Проверить late-game synergy paths
 
@@ -216,7 +212,7 @@
 - [ ] Стартовое HP
 - [ ] Снижение входящего урона
 - [ ] Extra life / revive
-- [ ] Reel 4 / Reel 5
+- [ ] ✨ **Reel 4 / Reel 5** — разблокировка за chips; радикально меняет математику Match-3
 - [ ] Скидка в shop
 - [ ] Полный refund всех chips в любой момент
 - [ ] Синхронизировать UI модулей с правилами `mechanics.md`

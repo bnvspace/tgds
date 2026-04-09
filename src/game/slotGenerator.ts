@@ -1,5 +1,4 @@
-import type { GameSymbol, WeightedSymbol, Reel, QTETier, QTEResult } from '@/types'
-import { QTE_MULTIPLIERS } from '@/types'
+import type { GameSymbol, WeightedSymbol } from '@/types'
 
 const JACKPOT_MIN_MATCH = 3
 
@@ -32,13 +31,11 @@ export function isJackpotSpin(symbols: GameSymbol[]): boolean {
   return false
 }
 
-export function spin(reels: Reel[]): GameSymbol[] {
-  return reels.map((reel) => weightedRandom(reel.symbolPool))
+export function spin(symbolPool: WeightedSymbol[], reelCount: number): GameSymbol[] {
+  if (symbolPool.length === 0 || reelCount <= 0) {
+    return []
+  }
+
+  return Array.from({ length: reelCount }, () => weightedRandom(symbolPool))
 }
 
-export function makeQTEResult(tier: QTETier): QTEResult {
-  return {
-    tier,
-    multiplier: QTE_MULTIPLIERS[tier] as 1 | 1.5 | 2 | 3,
-  }
-}

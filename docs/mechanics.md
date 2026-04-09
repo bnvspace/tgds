@@ -106,6 +106,7 @@ interface Player {
   maxHp: number
   armor: number
   reels: Reel[]
+  symbolInventory: WeightedSymbol[]
   relics: Relic[]
   tokens: number           // 0..100, in-run currency
   chipsEarned: number
@@ -171,11 +172,12 @@ interface Enemy {
 
 ## Reels and Manual Stop
 
-Каждый барабан — независимый взвешенный пул:
+Все барабаны тянут символы из одного общего inventory player-а:
 
 ```ts
-interface Reel {
-  symbolPool: Array<{ symbol: GameSymbol; weight: number }>
+interface Player {
+  reels: Reel[]
+  symbolInventory: Array<{ symbol: GameSymbol; weight: number }>
 }
 ```
 
@@ -186,6 +188,7 @@ interface Reel {
 3. Каждое нажатие `STOP` останавливает **только следующий активный барабан**.
 4. Порядок остановки жесткий: `1 → 2 → 3 → 4 → 5`.
 5. Пока игрок не остановил последний барабан, резолв не начинается.
+6. Каждый остановленный барабан роллит символ только из `player.symbolInventory`.
 
 ### UX для мобильного/TMA
 

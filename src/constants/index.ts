@@ -27,3 +27,15 @@ export const BALANCE = {
   HEAL_POTION_AMOUNT: 20,
   ATTACK_BONUS_AMOUNT: 5,
 } as const
+
+// ── Timing Skill Check ───────────────────────────────────
+// Offset thresholds: normalized 0..1 distance from ideal stop position
+export const TIMING = {
+  PERFECT_THRESHOLD: 0.12,   // ≤ 12% offset = perfect
+  GOOD_THRESHOLD: 0.25,      // ≤ 25% offset = good
+  PERFECT_MULTIPLIER: 2.0,
+  GOOD_MULTIPLIER: 1.5,
+  OK_MULTIPLIER: 1.0,
+  FEEDBACK_DISPLAY_MS: 800,  // how long the floating label stays
+  MAGNET_SNAP: true,         // snap to nearest cell on good+ timing
+} as const

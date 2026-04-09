@@ -1,13 +1,14 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import type { CSSProperties } from 'react'
-import type { GameSymbol } from '@/types'
-import type { SlotReelHandle } from '@/components/SlotReel'
+import type { GameSymbol, TimingTier } from '@/types'
+import type { SlotReelHandle, ReelStopResult } from '@/components/SlotReel'
 import SlotReel from '@/components/SlotReel'
 import { useTranslation } from '@/i18n'
 import styles from './SlotMachine.module.css'
 
 interface SlotMachineProps {
-  reels: Array<{ symbolPool: Array<{ symbol: GameSymbol; weight: number }> }>
+  reelCount: number
+  symbolPool: GameSymbol[]
   isSpinning: boolean
   onSpin: () => void
   disabled?: boolean
@@ -15,18 +16,19 @@ interface SlotMachineProps {
 
 export interface SlotMachineHandle {
   spinTo: (results: GameSymbol[]) => Promise<void>
-  stopNextReel: () => void
+  stopNextReel: () => Promise<ReelStopResult | null>
+  flashReelTiming: (reelIndex: number, tier: TimingTier) => void
 }
 
 const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
-  ({ reels, isSpinning, onSpin, disabled }, ref) => {
+  ({ reelCount, symbolPool, isSpinning, onSpin, disabled }, ref) => {
     const reelRefs = useRef<(SlotReelHandle | null)[]>([])
     const spinPromiseRef = useRef<Promise<void> | null>(null)
     const resolveSpinRef = useRef<(() => void) | null>(null)
     const activeSpinRef = useRef(false)
     const stopInFlightRef = useRef(false)
     const nextStopIndexRef = useRef(0)
-    const totalReelsRef = useRef(reels.length)
+    const totalReelsRef = useRef(reelCount)
     const { lang, localizeSymbolName, t } = useTranslation()
 
     function localizeSymbol(symbol: GameSymbol): GameSymbol {
@@ -42,29 +44,30 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
       }
     }
 
-    function stopCurrentReel() {
+    async function stopCurrentReel(): Promise<ReelStopResult | null> {
       if (!activeSpinRef.current || stopInFlightRef.current) {
-        return
+        return null
       }
 
       const reelIndex = nextStopIndexRef.current
       const reelRef = reelRefs.current[reelIndex]
 
       if (!reelRef) {
-        return
+        return null
       }
 
       stopInFlightRef.current = true
 
-      void reelRef.stop().then(() => {
-        const nextIndex = reelIndex + 1
-        nextStopIndexRef.current = nextIndex
-        stopInFlightRef.current = false
+      const result = await reelRef.stop()
+      const nextIndex = reelIndex + 1
+      nextStopIndexRef.current = nextIndex
+      stopInFlightRef.current = false
 
-        if (nextIndex >= totalReelsRef.current) {
-          resolveSpinIfFinished(nextIndex)
-        }
-      })
+      if (nextIndex >= totalReelsRef.current) {
+        resolveSpinIfFinished(nextIndex)
+      }
+
+      return result
     }
 
     useImperativeHandle(ref, () => ({
@@ -95,23 +98,27 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
         return spinPromiseRef.current
       },
 
-      stopNextReel: () => {
+      stopNextReel: async (): Promise<ReelStopResult | null> => {
         if (!activeSpinRef.current) {
-          return
+          return null
         }
 
         if (stopInFlightRef.current) {
-          return
+          return null
         }
 
-        stopCurrentReel()
+        return stopCurrentReel()
+      },
+
+      flashReelTiming: (reelIndex: number, tier: TimingTier) => {
+        reelRefs.current[reelIndex]?.flashTiming(tier)
       },
     }))
 
     const buttonLabel = isSpinning ? t('stop_button') : t('spin_button')
     const buttonDisabled = isSpinning ? false : disabled
-    const reelWidth = reels.length >= 6 ? 48 : reels.length === 5 ? 56 : reels.length === 4 ? 64 : 72
-    const reelGap = reels.length >= 6 ? 4 : reels.length === 5 ? 5 : 6
+    const reelWidth = reelCount >= 6 ? 48 : reelCount === 5 ? 56 : reelCount === 4 ? 64 : 72
+    const reelGap = reelCount >= 6 ? 4 : reelCount === 5 ? 5 : 6
     const reelRowStyle = {
       '--reel-width': `${reelWidth}px`,
       '--reel-gap': `${reelGap}px`,
@@ -120,8 +127,8 @@ const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
     return (
       <div className={styles.wrap}>
         <div className={styles.reelsRow} style={reelRowStyle}>
-          {reels.map((reel, index) => {
-            const localizedPool = reel.symbolPool.map((weightedSymbol) => localizeSymbol(weightedSymbol.symbol))
+          {Array.from({ length: reelCount }, (_, index) => {
+            const localizedPool = symbolPool.map((symbol) => localizeSymbol(symbol))
 
             return (
               <SlotReel

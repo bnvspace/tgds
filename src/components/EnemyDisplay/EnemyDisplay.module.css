@@ -98,6 +98,18 @@
     filter 0.22s ease;
 }
 
+.icon.stunned {
+  filter:
+    drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45))
+    drop-shadow(0 0 8px rgba(96, 184, 232, 0.7));
+  animation: stunPulse 0.8s steps(4) infinite;
+}
+
+@keyframes stunPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 .bossViewport .icon {
   width: clamp(132px, 28vw, 200px);
   height: clamp(132px, 28vw, 200px);
@@ -145,6 +157,31 @@
   gap: 12px;
 }
 
+.hpMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.armorBadge {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #bfe3ca;
+  padding: 2px 5px;
+  background: rgba(76, 175, 110, 0.12);
+  border: 1px solid rgba(76, 175, 110, 0.35);
+}
+
+.poisonBadge {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #9b72cf;
+  padding: 2px 5px;
+  background: rgba(155, 114, 207, 0.12);
+  border: 1px solid rgba(155, 114, 207, 0.38);
+}
+
 .hpLabel {
   font-family: var(--font-pixel);
   font-size: 11px;
@@ -162,6 +199,7 @@
   background: rgba(42, 14, 14, 0.9);
   border: 1px solid rgba(61, 21, 21, 0.85);
   overflow: hidden;
+  position: relative;
 }
 
 .hpFill {
@@ -169,6 +207,23 @@
   background: linear-gradient(90deg, #cf4438, #f15d44);
   box-shadow: inset 0 1px 0 rgba(255, 120, 120, 0.4);
   transition: width 0.3s steps(6);
+}
+
+/* Armor display overlay on HP bar */
+.armorOverlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  max-width: 40%;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(76, 175, 110, 0.28) 0px,
+    rgba(76, 175, 110, 0.28) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  pointer-events: none;
 }
 
 .nextAttack {
@@ -243,10 +298,37 @@
   color: var(--color-info);
 }
 
+.attackDmgCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
 .attackDmg {
   font-family: var(--font-pixel);
-  font-size: 9px;
+  font-size: 13px;
   color: #ffd7cf;
+  line-height: 1;
+}
+
+.nextAttack[data-attack='magical'] .attackDmg,
+.intentBadge[data-attack='magical'] ~ .attackDmgCol .attackDmg {
+  color: #9fdcff;
+}
+
+.nextAttack[data-attack='debuff'] .attackDmg,
+.intentBadge[data-attack='debuff'] ~ .attackDmgCol .attackDmg {
+  color: #d7a0ff;
+}
+
+.attackDmgReduced {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  line-height: 1;
 }
 
 .attackDesc {

@@ -18,6 +18,13 @@ const intentIconByType = {
   debuff: symbolIconById.poison_vial,
 } as const
 
+const STATUS_ICON: Record<string, string> = {
+  poison: '☠',
+  freeze: '⚡',
+  burn: '🔥',
+  block_reel: '🔒',
+}
+
 export default function EnemyDisplay({
   enemy,
   combatPhase = 'player_idle',
@@ -34,6 +41,9 @@ export default function EnemyDisplay({
     localizeEnemyName,
   } = useTranslation()
 
+  const poisonEffect = enemy.statusEffects.find((e) => e.type === 'poison')
+  const isStunned = enemy.statusEffects.some((e) => e.type === 'freeze' && e.duration > 0)
+
   return (
     <div className={styles.wrap}>
       <div
@@ -49,14 +59,14 @@ export default function EnemyDisplay({
         <GameIcon
           icon={enemy.icon}
           alt={localizeEnemyName(enemy)}
-          className={styles.icon}
+          className={`${styles.icon} ${isStunned ? styles.stunned : ''}`}
         />
         {enemy.statusEffects.length > 0 && (
           <div className={styles.statusBadges}>
             {enemy.statusEffects.map((statusEffect, index) => (
               <span key={index} className={styles.badge} data-type={statusEffect.type}>
-                {statusEffect.type === 'poison' ? '☠' : statusEffect.type === 'freeze' ? '❄' : '🔥'}
-                {statusEffect.duration}
+                {STATUS_ICON[statusEffect.type] ?? '?'}
+                {statusEffect.type === 'poison' ? statusEffect.value : statusEffect.duration}
               </span>
             ))}
           </div>
@@ -65,35 +75,67 @@ export default function EnemyDisplay({
 
       <div className={styles.hpRow}>
         <span className={styles.hpLabel}>{localizeEnemyName(enemy)}</span>
-        <span className={styles.hpValues}>{enemy.hp}/{enemy.maxHp}</span>
+        <div className={styles.hpMeta}>
+          {enemy.armor > 0 && (
+            <span className={styles.armorBadge}>
+              🛡 {enemy.armor}
+            </span>
+          )}
+          {poisonEffect && (
+            <span className={styles.poisonBadge}>
+              ☠ {poisonEffect.value}×{poisonEffect.duration}
+            </span>
+          )}
+          <span className={styles.hpValues}>{enemy.hp}/{enemy.maxHp}</span>
+        </div>
       </div>
       <div className={styles.hpBar}>
         <div className={styles.hpFill} style={{ width: `${hpPercent}%` }} />
+        {enemy.armor > 0 && (
+          <div
+            className={styles.armorOverlay}
+            style={{ width: `${Math.min(100, (enemy.armor / enemy.maxHp) * 100 * 8)}%` }}
+          />
+        )}
       </div>
 
-      {currentPattern && (
-        <div className={styles.nextAttack}>
-          <span className={styles.intentBadge} data-attack={currentPattern.type}>
-            <GameIcon
-              icon={intentIconByType[currentPattern.type]}
-              alt={localizeAttackType(currentPattern.type)}
-              decorative
-              className={styles.intentIcon}
-            />
-          </span>
-          <div className={styles.attackCopy}>
-            <div className={styles.intentMetaRow}>
-              <span className={styles.nextLabel}>{t('intent_label')}</span>
-              <span className={styles.intentCycle}>
-                {t('intent_cycle')} {intentStep}/{intentTotalSteps}
-              </span>
+      {currentPattern && (() => {
+        const effectiveDmg = currentPattern.type === 'physical' && enemy.armor > 0
+          ? Math.max(0, currentPattern.damage - enemy.armor)
+          : currentPattern.damage
+        const armorReduces = currentPattern.type === 'physical' && enemy.armor > 0
+
+        return (
+          <div className={styles.nextAttack} data-attack={currentPattern.type}>
+            <span className={styles.intentBadge} data-attack={currentPattern.type}>
+              <GameIcon
+                icon={intentIconByType[currentPattern.type]}
+                alt={localizeAttackType(currentPattern.type)}
+                decorative
+                className={styles.intentIcon}
+              />
+            </span>
+            <div className={styles.attackCopy}>
+              <div className={styles.intentMetaRow}>
+                <span className={styles.nextLabel}>{t('intent_label')}</span>
+                <span className={styles.intentCycle}>
+                  {t('intent_cycle')} {intentStep}/{intentTotalSteps}
+                </span>
+              </div>
+              <span className={styles.attackType}>{localizeAttackType(currentPattern.type)}</span>
+              <span className={styles.attackDesc}>{localizeAttackDescription(currentPattern.description)}</span>
             </div>
-            <span className={styles.attackType}>{localizeAttackType(currentPattern.type)}</span>
-            <span className={styles.attackDesc}>{localizeAttackDescription(currentPattern.description)}</span>
+            <div className={styles.attackDmgCol}>
+              <span className={styles.attackDmg}>-{effectiveDmg}</span>
+              {armorReduces && (
+                <span className={styles.attackDmgReduced}>
+                  -{currentPattern.damage} 🛡 {enemy.armor}
+                </span>
+              )}
+            </div>
           </div>
-          <span className={styles.attackDmg}>-{currentPattern.damage}</span>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

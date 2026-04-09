@@ -89,3 +89,39 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Timing feedback — flashes on stop */
+.window.stopPerfect {
+  animation: flashPerfect 0.4s steps(4) forwards;
+}
+
+.window.stopGood {
+  animation: flashGood 0.35s steps(3) forwards;
+}
+
+@keyframes flashPerfect {
+  0% {
+    border-color: var(--border-bright, #f0d090);
+    box-shadow: inset 0 0 6px rgba(240, 208, 144, 0.5);
+  }
+  50% {
+    border-color: var(--border-bright, #f0d090);
+    box-shadow: inset 0 0 8px rgba(240, 208, 144, 0.6);
+  }
+  100% {
+    border-color: #2a2a3e;
+    box-shadow: none;
+  }
+}
+
+@keyframes flashGood {
+  0% {
+    border-color: var(--accent-chip, #59b86d);
+    box-shadow: inset 0 0 4px rgba(89, 184, 109, 0.4);
+  }
+  100% {
+    border-color: #2a2a3e;
+    box-shadow: none;
+  }
+}
+

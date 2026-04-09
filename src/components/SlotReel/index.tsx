@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import type { GameSymbol } from '@/types'
+import type { GameSymbol, TimingTier } from '@/types'
 import { createGameIconNode } from '@/utils/gameIcon'
 import { haptics } from '@/utils/haptics'
 import styles from './SlotReel.module.css'
@@ -62,9 +62,14 @@ function buildStopStrip(
   }
 }
 
+export interface ReelStopResult {
+  offset: number  // normalized 0..1 distance from ideal position
+}
+
 export interface SlotReelHandle {
   startSpin: (result: GameSymbol) => void
-  stop: () => Promise<void>
+  stop: () => Promise<ReelStopResult>
+  flashTiming: (tier: TimingTier) => void
 }
 
 interface SlotReelProps {
@@ -82,6 +87,7 @@ const TYPE_COLOR: Record<string, string> = {
 
 const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
   ({ symbolPool, initialSymbol, labelVersion }, ref) => {
+    const windowRef = useRef<HTMLDivElement>(null)
     const stripRef = useRef<HTMLDivElement>(null)
     const loopBaseRef = useRef<GameSymbol[]>([])
     const loopSymbolsRef = useRef<GameSymbol[]>([])
@@ -185,12 +191,31 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
       rafRef.current = requestAnimationFrame(runLoop)
     }
 
+    /**
+     * Compute how far the current offset is from ideal cell alignment.
+     * Returns normalized 0..1 where 0 = perfectly centered, 0.5 = worst.
+     */
+    function computeStopOffset(): number {
+      const offsetWithinCell = currentOffsetRef.current % SYM_H
+      // 0 = perfectly aligned, SYM_H/2 = worst position
+      const distanceFromCenter = Math.abs(offsetWithinCell - SYM_H / 2)
+      // Normalize: 0 when perfectly on cell center, 1 when at cell boundary
+      // But we want 0 = perfect = hit the center, so invert
+      const normalizedFromIdeal = distanceFromCenter / (SYM_H / 2)
+      return normalizedFromIdeal
+    }
+
     useImperativeHandle(ref, () => ({
       startSpin: (result: GameSymbol) => {
         if (!stripRef.current || symbolPool.length === 0) return
 
         if (rafRef.current) {
           cancelAnimationFrame(rafRef.current)
+        }
+
+        // Clear any timing flash
+        if (windowRef.current) {
+          windowRef.current.classList.remove(styles.stopPerfect, styles.stopGood)
         }
 
         const loopBase = pickLoopBase(symbolPool)
@@ -213,11 +238,14 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
         rafRef.current = requestAnimationFrame(runLoop)
       },
 
-      stop: () => new Promise<void>((resolve) => {
+      stop: () => new Promise<ReelStopResult>((resolve) => {
         if (!stripRef.current || !pendingResultRef.current || !spinningRef.current) {
-          resolve()
+          resolve({ offset: 1 })
           return
         }
+
+        // Capture timing offset BEFORE stopping
+        const stopOffset = computeStopOffset()
 
         spinningRef.current = false
         if (rafRef.current) {
@@ -283,17 +311,33 @@ const SlotReel = forwardRef<SlotReelHandle, SlotReelProps>(
               if (stripRef.current) {
                 stripRef.current.style.transition = ''
               }
-              resolve()
+              resolve({ offset: stopOffset })
             }, 120)
           }, 65)
         }
 
         requestAnimationFrame(tick)
       }),
+
+      flashTiming: (tier: TimingTier) => {
+        if (!windowRef.current) return
+        const el = windowRef.current
+
+        // Remove any previous flash
+        el.classList.remove(styles.stopPerfect, styles.stopGood)
+        // Force reflow to re-trigger animation
+        void el.offsetWidth
+
+        if (tier === 'perfect') {
+          el.classList.add(styles.stopPerfect)
+        } else if (tier === 'good') {
+          el.classList.add(styles.stopGood)
+        }
+      },
     }))
 
     return (
-      <div className={styles.window}>
+      <div ref={windowRef} className={styles.window}>
         <div className={styles.centerLine} />
         <div ref={stripRef} className={styles.strip} />
       </div>
