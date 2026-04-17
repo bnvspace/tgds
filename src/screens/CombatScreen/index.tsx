@@ -15,7 +15,6 @@ export default function CombatScreen() {
     enemy,
     lastSpinResult,
     combatPhase,
-    combatLog,
     showFleeConfirm,
     combatPrompt,
     playerHpPercent,
@@ -89,20 +88,6 @@ export default function CombatScreen() {
             animate={{ width: `${playerHpPercent}%` }}
             transition={{ duration: 0.4 }}
           />
-        </div>
-      </section>
-
-      <section className={styles.feedPanel} aria-label={t('battle_feed')}>
-        <div className={styles.feedHeader}>
-          <span className={styles.feedTitle}>{t('battle_feed')}</span>
-          <span className={styles.feedCount}>{combatLog.length}</span>
-        </div>
-        <div className={styles.feedList}>
-          {combatLog.slice(-3).map((entry, index) => (
-            <p key={`${index}-${entry}`} className={styles.feedLine}>
-              {entry}
-            </p>
-          ))}
         </div>
       </section>
 

@@ -65,45 +65,6 @@
   box-shadow: var(--panel-shadow-tight);
 }
 
-.feedPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  background: rgba(14, 14, 22, 0.92);
-  border: 1px solid rgba(107, 82, 64, 0.42);
-  box-shadow: var(--panel-shadow-tight);
-}
-
-.feedHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.feedTitle,
-.feedCount {
-  font-family: var(--font-pixel);
-  font-size: 8px;
-  color: var(--color-text-muted);
-  letter-spacing: 0.08em;
-}
-
-.feedList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.feedLine {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.45;
-  color: #d7d0c9;
-  overflow-wrap: anywhere;
-}
-
 .playerPanelTop {
   display: flex;
   align-items: center;

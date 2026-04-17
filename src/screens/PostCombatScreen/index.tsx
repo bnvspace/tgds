@@ -75,7 +75,6 @@ export default function PostCombatScreen() {
   const screenStyle = {
     '--reward-backdrop': `url("${zoneBackdropByZone[reward.zone]}")`,
   } as CSSProperties
-  const combatLog = reward.combatLog ?? []
   const rewardOptions = reward.options ?? []
   const newUnlocks = reward.newUnlocks ?? []
 
@@ -249,21 +248,6 @@ export default function PostCombatScreen() {
           </section>
         )}
 
-        <section className={styles.logPanel} aria-label={t('combat_log')}>
-          <div className={styles.logHeader}>
-            <span className={styles.logTitle}>{t('combat_log')}</span>
-            <span className={styles.logCount}>{combatLog.length}</span>
-          </div>
-
-          <ol className={styles.logList}>
-            {combatLog.map((entry, index) => (
-              <li key={`${index}-${entry}`} className={styles.logItem}>
-                <span className={styles.logIndex}>{String(index + 1).padStart(2, '0')}</span>
-                <span className={styles.logLine}>{entry}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
       </section>
 
       {rewardOptions.length === 0 && (
