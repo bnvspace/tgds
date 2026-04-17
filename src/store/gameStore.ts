@@ -19,6 +19,13 @@ import { ALL_SYMBOLS, BASE_STARTER_SYMBOL_IDS, STARTER_REELS } from '@/game/symb
 import { BALANCE, CONFIG } from '@/constants'
 import { generateWorldMap } from '@/game/worldMap'
 import { haptics } from '@/utils/haptics'
+import {
+  buildPersistedSnapshot,
+  MENU_PERSISTED_STATE,
+  normalizePersistedPhase,
+  type PersistedGameState,
+  shouldResumeCombatSession,
+} from '@/store/persistence'
 
 const DEFAULT_META: MetaProgress = {
   totalChips: 100, // Starting chips so modifiers are immediately usable
@@ -203,62 +210,8 @@ const INITIAL: GameState = {
   meta: DEFAULT_META,
 }
 
-const RESUMABLE_COMBAT_PHASES = new Set<GamePhase>([
-  'combat_start',
-  'player_spin',
-  'resolving',
-  'enemy_action',
-  'turn_end',
-])
-
-type PersistedGameState = Partial<GameState> & {
-  meta?: Partial<MetaProgress>
-}
-
 function isPersistedGameState(value: unknown): value is PersistedGameState {
   return typeof value === 'object' && value !== null
-}
-
-function normalizePersistedPhase(
-  phase: GamePhase | 'initial_shop',
-  player: Player | null,
-  currentEnemy: Enemy | null,
-  lastCombatReward: CombatReward | null,
-): GamePhase {
-  if (!player) {
-    if (
-      phase === 'settings'
-      || phase === 'leaderboard'
-      || phase === 'modifiers'
-      || phase === 'meta_menu'
-    ) {
-      return phase
-    }
-
-    return 'meta_menu'
-  }
-
-  if (phase !== 'initial_shop' && RESUMABLE_COMBAT_PHASES.has(phase)) {
-    return currentEnemy ? 'combat_start' : 'world_map'
-  }
-
-  if (phase === 'post_combat') {
-    return lastCombatReward ? 'post_combat' : 'shop'
-  }
-
-  if (phase === 'initial_shop' || phase === 'start_symbols') {
-    return 'start_symbols'
-  }
-
-  if (phase === 'world_map' || phase === 'shop') {
-    return phase
-  }
-
-  if (phase === 'game_over' || phase === 'run_complete') {
-    return phase
-  }
-
-  return phase
 }
 
 function pickRewardSymbols(enemy: Enemy, player: Player, unlockedSymbolIds: string[]) {
@@ -824,23 +777,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'tgds-meta-storage',
-      partialize: (state) => ({
-        phase: normalizePersistedPhase(
-          state.phase,
-          state.player,
-          state.currentEnemy,
-          state.lastCombatReward,
-        ),
-        currentZone: state.currentZone,
-        worldTier: state.worldTier,
-        player: state.player,
-        currentEnemy: state.currentEnemy,
-        mapNodes: state.mapNodes,
-        currentNodeId: state.currentNodeId,
-        lastSpinResult: state.lastSpinResult,
-        lastCombatReward: state.lastCombatReward,
-        meta: state.meta,
-      }),
+      partialize: (state) => buildPersistedSnapshot(state),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as Partial<GameState> | undefined
         const player = normalizePlayerInventory(persisted?.player ?? currentState.player)
@@ -857,11 +794,10 @@ export const useGameStore = create<GameStore>()(
             persisted?.phase ?? currentState.phase,
             player,
             currentEnemy,
-            lastCombatReward,
           ),
         }
       },
-      version: 8,
+      version: 9,
       migrate: (persistedState: unknown, version: number) => {
         if (!isPersistedGameState(persistedState)) {
           return persistedState
@@ -882,7 +818,6 @@ export const useGameStore = create<GameStore>()(
             persistedState.phase ?? INITIAL.phase,
             persistedState.player ?? null,
             persistedState.currentEnemy ?? null,
-            persistedState.lastCombatReward ?? null,
           )
         }
         if (persistedState && version < 6) {
@@ -914,6 +849,35 @@ export const useGameStore = create<GameStore>()(
               | null
               | undefined,
           )
+        }
+        if (persistedState && version < 9) {
+          const normalizedPlayer = normalizePlayerInventory(
+            persistedState.player as
+              | (Partial<Player> & {
+                  reels?: Array<{ id?: string; symbolPool?: Array<{ symbol: GameSymbol; weight: number }> }>
+                  symbolInventory?: WeightedSymbol[]
+                })
+              | null
+              | undefined,
+          )
+          const normalizedEnemy = normalizedPlayer
+            ? (persistedState.currentEnemy as Enemy | null | undefined) ?? null
+            : null
+
+          if (
+            shouldResumeCombatSession(
+              (persistedState.phase as GamePhase | 'initial_shop' | undefined) ?? INITIAL.phase,
+              normalizedPlayer,
+              normalizedEnemy,
+            )
+          ) {
+            persistedState.phase = 'combat_start'
+            persistedState.player = normalizedPlayer
+            persistedState.currentEnemy = normalizedEnemy
+            persistedState.lastCombatReward = null
+          } else {
+            Object.assign(persistedState, MENU_PERSISTED_STATE)
+          }
         }
         return persistedState
       },
