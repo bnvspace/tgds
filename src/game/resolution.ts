@@ -1,5 +1,5 @@
 import { BALANCE } from '@/constants'
-import type { Enemy, GameSymbol, MatchGroup, Player, QTEResult, SpinResult, Synergy, TimingResult, TimingTier, WeightedSymbol } from '@/types'
+import type { GameSymbol, MatchGroup, Player, QTEResult, SpinResult, Synergy, TimingResult, TimingTier, WeightedSymbol } from '@/types'
 import { detectSynergies } from './synergies'
 import { getSymbolTimingMultiplier, bestWeaponTiming, makeDefaultTiming } from './skillCheck'
 
@@ -123,7 +123,7 @@ export function preResolveModifiers(
  *   - poison   → stacks applied to enemy; ticks as DoT, bypasses armor
  *   - stun     → enemy skips next action
  *   - bomb     → base + player.bombCharge × BOMB_PER_CHARGE_DMG (physical)
- *   - axe      → base + enemy.armor × AXE_ARMOR_MULT (physical)
+ *   - axe      → base + player.armor × AXE_ARMOR_MULT (physical)
  *   - sawblade → no direct damage; forces neighbor perfect timing (handled in preResolveModifiers)
  *
  * Timing multipliers apply ONLY to weapon/explosive physical and magic damage.
@@ -133,7 +133,6 @@ export function resolveSymbols(
   symbols: GameSymbol[],
   timingResults: TimingResult[],
   player: Player,
-  _enemy: Enemy | null = null,
   rerollsApplied: number[] = [],
 ): SpinResult {
   const physicalStrengthRanks = player.metaModifiers

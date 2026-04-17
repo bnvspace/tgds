@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client'
 import type { SafeAreaInset, Telegram, WebApp as TelegramWebApp } from '@twa-dev/types'
 import App from './App'
 import './styles/global.css'
+import RuntimeErrorBoundary from '@/components/RuntimeErrorBoundary'
 import { haptics } from '@/utils/haptics'
+import { initMonitoring } from '@/utils/monitoring'
 
 const TELEGRAM_BG = '#0a0a0f'
 const VIEWPORT_RETRY_DELAYS_MS = [350, 500, 1000] as const
@@ -108,6 +110,8 @@ if (!rootEl) {
   throw new Error('Root element not found')
 }
 
+initMonitoring()
+
 document.addEventListener('pointerdown', (event) => {
   if (!(event.target instanceof HTMLElement)) {
     return
@@ -134,6 +138,8 @@ document.addEventListener('pointerdown', (event) => {
 
 createRoot(rootEl).render(
   <StrictMode>
-    <App />
+    <RuntimeErrorBoundary>
+      <App />
+    </RuntimeErrorBoundary>
   </StrictMode>,
 )

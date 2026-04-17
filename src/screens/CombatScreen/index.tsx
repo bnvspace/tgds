@@ -58,6 +58,7 @@ export default function CombatScreen() {
 
       <EnemyDisplay
         enemy={enemy}
+        playerArmor={player.armor}
         combatPhase={combatPhase}
         lastSpinResult={lastSpinResult}
       />
@@ -91,8 +92,6 @@ export default function CombatScreen() {
         </div>
       </section>
 
-      {/* Battle feed hidden — re-enable when screen layout is reworked */}
-      {false && (
       <section className={styles.feedPanel} aria-label={t('battle_feed')}>
         <div className={styles.feedHeader}>
           <span className={styles.feedTitle}>{t('battle_feed')}</span>
@@ -106,7 +105,6 @@ export default function CombatScreen() {
           ))}
         </div>
       </section>
-      )}
 
       {showFleeConfirm && (
         <div className={styles.fleeOverlay}>

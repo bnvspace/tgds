@@ -1,281 +1,68 @@
-# Tasklist: Slot & Dungeons TMA
+# Tasklist: Gift's & Daggers
 
-> Обновленный roadmap после ребейзна дизайна под оригинальную Slots & Daggers.
-> Старые направления `initial shop before first combat` и `auto-stop` считаются устаревшими и больше не развиваются.
+> Актуальный статус проекта. Этот файл отражает то, что реально есть в коде сейчас, а не старые промежуточные планы.
 
-## Таблица прогресса
+## Прогресс
 
-| № | Итерация | Статус |
-|---|----------|--------|
-| 0 | Docs Rebaseline: original-faithful rules | ✅ Готово |
+| № | Этап | Статус |
+|---|------|--------|
+| 0 | Docs Rebaseline | ✅ Готово |
 | 1 | Core Loop Rework: manual stop + старт из 3 символов | ✅ Готово |
 | 2 | Combat Readability: Match-3 + Enemy Intents | ✅ Готово |
 | 3 | Inventory Pool RNG: shared symbol pool + deck-thinning | ✅ Готово |
-| 4 | Skill Checks: тайминг остановки и crit logic | ✅ Готово |
+| 4 | Skill Checks: timed stop crit logic | ✅ Готово |
 | 5 | Combat Math: armor / magic / poison / stun | ✅ Готово |
-| 6 | Shop & Run Economy: post-win shop + coin cap 100 | ✅ Готово |
-| 7 | Symbols & Builds: Bomb persist + Axe / Diamond / Sawblade | 🔄 В работе |
-| 8 | Meta Progression: modules closer to original | ⬜ Не начата |
-| 9 | Atmosphere & Game Feel: tavern cabinet + reward physics | ⬜ Не начата |
-| 10 | TMA Polish & Deploy | ⬜ Не начата |
-
-> Статусы: ⬜ Не начата | 🔄 В работе | ✅ Готово | 🔒 Заблокировано
-
----
-
-## Итерация 0 — Docs Rebaseline ✅
-
-Сделано:
-
-- [x] `mechanics.md` переведен на original-faithful правила
-- [x] auto-stop объявлен запрещенным
-- [x] старт через `initial shop` признан устаревшим
-- [x] Bomb persistence между боями зафиксирован как правило
-- [x] боевая аутентичность поднята в первый приоритет
-
----
-
-## Итерация 1 — Core Loop Rework: Manual Stop + Start 3 ✅
-
-**Цель:** привести старт забега и управление барабанами к оригинальному core loop.
-
-Что делаем:
-
-- [x] Убрать auto-stop из `SlotMachine`
-- [x] Оставить только ручную остановку барабанов по одному
-- [x] Жестко зафиксировать порядок stop: слева направо
-- [x] Переделать старт рана: без `Initial Shop`
-- [x] Сделать экран выбора ровно 3 стартовых символов
-- [x] Для пустой меты использовать базовый набор из 3 стартовых символов
-- [x] После выбора 3 символов сразу переходить к карте / первому бою по текущему flow
-- [x] Удалить из активного флоу старые следы `initial_shop`
-
-Изменяемые файлы:
-
-- [ ] `src/components/SlotMachine/index.tsx`
-- [ ] `src/components/SlotReel/index.tsx`
-- [ ] `src/hooks/useCombatFlow.ts`
-- [ ] `src/store/gameStore.ts`
-- [ ] `src/screens/InitialShop/index.tsx` или новый экран выбора старта
-- [ ] `src/App.tsx`
-- [ ] `src/types/index.ts`
-
-Тест:
-
-1. Начать ран.
-2. Увидеть выбор стартовых символов, а не магазин.
-3. Подтвердить ровно 3 символа.
-4. В бою нажать `Spin`.
-5. Останавливать барабаны только кнопкой `STOP`.
-6. Убедиться, что без ручного stop барабаны не резолвятся сами.
-
----
-
-## Итерация 2 — Combat Readability: Match-3 + Enemy Intents ✅
-
-**Цель:** сделать спин тактически читаемым уже без полноценных skill checks.
-
-Что делаем:
-
-- [x] Реализовать Match-3 как умножение суммарного базового эффекта группы ×3
-- [x] Убрать искусственный forced-jackpot из `slotGenerator`
-- [x] Добавить явную фиксацию match-групп в `SpinResult`
-- [x] Показать Match-3 в combat log
-- [x] Довести `Enemy Intents` до очевидного и читаемого вида на экране боя
-- [x] Проверить, что игрок до спина видит, что именно сделает враг следующим ходом
-
-Тест:
-
-1. Собрать спин с тремя одинаковыми символами.
-2. Проверить, что их общий базовый эффект умножился на 3.
-3. Убедиться, что это видно в combat log.
-4. Перед каждым спином увидеть next intent врага на экране без скрытых состояний.
-
----
-
-## Итерация 3 — Inventory Pool RNG: Shared Symbol Pool + Deck-Thinning ✅
-
-**Цель:** перевести слот-машину на честный RNG из общего инвентаря игрока.
-
-Сделано:
-
-- [x] Сделать общий inventory player-а источником всех спинов
-- [x] Убрать независимые пулы барабанов как основную модель данных
-- [x] Перевести `spin()` на выбор символов из shared pool
-- [x] Переделать магазин и removal под редактирование общего inventory
-- [x] Жестко запретить удаление ниже 3 символов
-- [x] Сохранить совместимость с текущим manual stop flow
-
-Тест:
-
-1. Начать ран с 3 стартовыми символами.
-2. Убедиться, что каждый барабан тянет символы из общего инвентаря игрока.
-3. После магазина удалить лишний символ.
-4. Проверить, что частота Match-3 заметно растет на маленьком пуле.
-5. Убедиться, что опуститься ниже 3 символов нельзя.
-
----
-
-## Итерация 4 — Skill Checks: Timing Crits ✅
-
-**Цель:** завязать skill checks на ручной остановке.
-
-Сделано:
-
-- [x] Перенести skill check с `jackpot-only QTE` на timed stop mechanic
-- [x] Добавить идеальные и допустимые окна тайминга
-- [x] Привязать timed bonus к выбранным типам оружия
-- [x] Сделать perfect stop источником гарантированного crit для timed-оружия
-- [x] Оставить множители только на damage-часть эффекта
-
-Тест:
-
-1. Запустить бой оружием с timed mechanic.
-2. Остановить барабан мимо окна.
-3. Остановить барабан близко к окну.
-4. Остановить барабан идеально.
-5. Проверить разницу урона и визуального фидбэка.
-
----
-
-## Итерация 5 — Combat Math: Armor / Magic / Poison / Stun ✅
-
-**Цель:** сделать тактический бой, а не только слот-анимацию.
-
-Сделано:
-
-- [x] Добавить armor врагам (Swamp boss 5, Sewer 8–20, Citadel 15–30)
-- [x] Провести разделение `physical` vs `magic`
-- [x] Сделать `magic` игнорирующим `armor`
-- [x] Реализовать `poison` как периодический урон без учета брони
-- [x] Реализовать `stun` как пропуск следующего `ENEMY_ACTION`
-- [x] Показать armor врага и статус-эффекты в UI
-
-Тест:
-
-1. Собрать защитный билд и проверить, что magic/poison его обходят.
-2. Наложить stun на врага.
-3. Проверить, что следующий ход врага полностью пропущен.
-
----
-
-## Итерация 6 — Shop & Run Economy ✅
-
-**Цель:** переделать экономику забега ближе к оригиналу.
-
-Сделано:
-
-- [x] Token cap 100 во всех точках начисления монет
-- [x] effectDescription: отображать poison/stun в Shop + PostCombat
-- [x] Ротация символов в магазине по fightsWon
-- [x] Индикатор cap 45/100 с fill-bar
-- [x] Enemy Intents UI: эффективный урон с учётом брони, цветовая кодировка
-
-Тест:
-
-1. Накопить монеты выше лимита.
-2. Проверить clamp до 100.
-3. Выиграть бой и попасть в магазин.
-4. Удалить символ.
-5. Проверить, что ниже 3 символов удалить нельзя.
-
----
-
-## Итерация 7 — Symbols & Builds
-
-**Цель:** ввести ключевые архетипы оригинала.
-
-Что делаем:
-
-- [x] Реализовать `Bomb` как run-persistent scaling symbol
-- [x] Добавить `Axe` с масштабированием от текущего armor
-- [x] Добавить `Diamond` — ✨ **post-stop reroll**: автоматически перекручивает соседний барабан если не крит
-- [x] Добавить `Sawblade` — ✨ **reroll mechanic**: перекручивает соседние после остановки, гарантируя крит
-- [x] Доработать Match-3 и синергии под новые билды
-- [x] Проверить late-game synergy paths
-
-Тест:
-
-1. Собрать билд через Bomb.
-2. Завершить несколько боев.
-3. Убедиться, что заряд Bomb переносится между боями.
-4. Собрать armor-build через Axe.
-
----
-
-## Итерация 8 — Meta Progression
-
-**Цель:** приблизить модули автомата к оригиналу.
-
-Что делаем:
-
-- [x] Стартовое HP
-- [x] Снижение входящего урона
-- [x] Extra life / revive
-- [x] ✨ **Reel 4 / Reel 5** — разблокировка за chips; радикально меняет математику Match-3
-- [x] Скидка в shop
-- [x] Полный refund всех chips в любой момент
-- [x] Синхронизировать UI модулей с правилами `mechanics.md`
-
-Тест:
-
-1. Купить модуль.
-2. Начать новый ран.
-3. Проверить, что бонус реально применился.
-4. Нажать refund.
-5. Убедиться, что chips вернулись полностью.
-
----
-
-## Итерация 9 — Atmosphere & Game Feel
-
-**Цель:** Придать прототипу аддиктивное тактильное ощущение оригинала (Game Feel & Visual/Audio Juice).
-
-Что делаем:
-- [x] **Физика выпадающих наград:** Анимация вылетающих монет и чипов при победах и наградах.
-- [x] **Атмосфера таверны:** Приглушенный фоновый гул толпы, реакция толпы (cheering) на мощные комбо.
-- [x] **Хрустящий аудио-дизайн:** Механические щелчки вращения барабанов, металлический лязг для физ. атак, эфирный звук для магии.
-- [x] **Визуальный сок (Juice):** Тряска камеры (camera shake) при получении урона и критах, мерцание экрана.
-
-Тест:
-1. Запустить игру, услышать гул таверны.
-2. Прокрутить слоты, услышать механическое вращение барабанов.
-3. Нанести крит-урон, увидеть тряску экрана и услышать реакцию толпы.
-4. Победить, увидеть физический вылет вознаграждения.
-
----
-
-## Итерация 10 — Endless Mode (Мета-лейтгейм)
-
-**Цель:** Дать хардкорным игрокам бесконечный режим с таблицей рекордов и хардкорными боссами.
-
-Что делаем:
-- [ ] Разблокировка режима после прохождения основной карты.
-- [ ] Бесконечная скаляция HP врагов.
-- [ ] Eggscalibur (Egg of Karkul) босс с 1000+ урона.
-- [ ] Интеграция лидерборда.
-
-Тест:
-1. Зайти в Endless Mode.
-2. Пережить 10+ боев.
-3. Умереть от Eggscalibur.
-4. Проверить счетборд.
-
-## Итерация 10 — TMA Polish & Deploy
-
-**Цель:** довести flow до Telegram Mini App качества.
-
-Что делаем:
-
-- [ ] Haptic feedback для spin / stop / hit / reward
-- [ ] Большая stop-zone под большой палец
-- [ ] Проверка manual stop на мобильном UX
-- [ ] Safe-area polish
-- [ ] Runtime error hygiene
-- [ ] Deploy
-
-Тест:
-
-1. Открыть игру в Telegram.
-2. Пройти бой одной рукой.
-3. Проверить, что manual stop удобен без автостопа.
+| 6 | Shop & Run Economy | ✅ Готово |
+| 7 | Symbols & Builds: Bomb / Axe / Diamond / Sawblade | ✅ Готово |
+| 8 | Meta Progression | ✅ Готово |
+| 9 | Atmosphere & Game Feel | ✅ Готово |
+| 10 | Endless Mode + Leaderboard | ✅ Готово |
+| 11 | TMA Polish & Ops | 🔄 В работе |
+
+## Что уже закрыто
+
+- Manual-stop бой без автостопа
+- Стартовый выбор ровно из 3 символов
+- Shared inventory RNG для всех барабанов
+- Match-3, боевые синергии и читаемые намерения врага
+- Timed stop skill checks
+- Armor / magic / poison / stun
+- Магазин после боя, cap на монеты, удаление символов
+- Bomb persistence, Axe, Diamond reroll, Sawblade force-perfect
+- Meta-модификаторы: HP, damage reduction, extra life, reel unlocks, token collector, shop discount, refund all
+- Аудио, хаптики, reward burst, shake, safe-area handling
+- Endless arena, Egg of Karkul, лидерборд через `api/leaderboard.ts`
+- Базовый test harness через `vitest` для `skillCheck`, `resolution`, `worldMap`
+- Тесты на `preResolveModifiers` и scoring/leaderboard math
+- Зелёные `npm run lint` и `npm run build`
+- Зелёный `npm run test`
+- Frontend runtime monitoring baseline через optional Sentry DSN и error boundary
+- Lazy loading экранов и vendor chunk splitting без build warning про oversized main bundle
+
+## Что осталось
+
+### 11. TMA Polish & Ops
+
+Уже сделано:
+
+- [x] Haptic feedback для ключевых действий
+- [x] Широкая нижняя кнопка `STOP`
+- [x] Safe-area и fullscreen handling для Telegram WebApp
+- [x] Runtime baseline: проект собирается и проходит lint
+- [x] Базовый deploy shape под Vercel + серверный leaderboard endpoint
+- [x] Frontend monitoring baseline через optional Sentry
+- [x] Lazy loading экранов и разбиение vendor bundle для более лёгкой первой загрузки
+
+Нужно закрыть:
+
+- [ ] Расширить automated tests на store flow, combat orchestration и регрессии UI-логики
+- [ ] Решить, нужен ли server-side monitoring для API routes отдельно от frontend Sentry
+- [ ] Проверить one-hand UX manual stop на реальном Telegram mobile
+- [ ] Заменить временные иконки для `Axe` и `Sawblade`
+- [ ] Провести финальный smoke test после прод-деплоя
+
+## Ближайший приоритет
+
+1. Тесты на `resolution`, `skillCheck`, `worldMap`, `shop/meta` базовые сценарии
+2. Runtime hygiene и мониторинг
+3. Финальная мобильная валидация в Telegram

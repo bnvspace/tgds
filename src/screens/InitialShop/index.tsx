@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import GameIcon from '@/components/GameIcon'
 import { ALL_SYMBOLS, BASE_STARTER_SYMBOL_IDS } from '@/game/symbols'
@@ -7,6 +7,19 @@ import { useTranslation } from '@/i18n'
 import { useGameStore } from '@/store/gameStore'
 import type { GameSymbol } from '@/types'
 import styles from './InitialShop.module.css'
+
+function sanitizeSelection(selected: Iterable<string>, availableIds: string[]) {
+  const availableSet = new Set(availableIds)
+  const next = new Set<string>()
+
+  for (const id of selected) {
+    if (availableSet.has(id) && next.size < CONFIG.START_SYMBOL_COUNT) {
+      next.add(id)
+    }
+  }
+
+  return next
+}
 
 export default function StartSymbolsScreen() {
   const setPhase = useGameStore((state) => state.setPhase)
@@ -17,35 +30,14 @@ export default function StartSymbolsScreen() {
     : [...BASE_STARTER_SYMBOL_IDS]
   const available = ALL_SYMBOLS.filter((symbol) => starterIds.includes(symbol.id))
   const availableIds = available.map((symbol) => symbol.id)
-  const availableIdsKey = availableIds.join('|')
   const starterSetLocked = available.length <= CONFIG.START_SYMBOL_COUNT
-  const [selected, setSelected] = useState<Set<string>>(
+  const [selectedState, setSelectedState] = useState<Set<string>>(
     () => new Set(starterSetLocked ? available.map((symbol) => symbol.id) : []),
   )
   const { t, localizeSymbolName } = useTranslation()
-
-  useEffect(() => {
-    const availableIdSet = new Set(availableIds)
-
-    setSelected((previous) => {
-      if (starterSetLocked) {
-        const next = new Set(availableIds)
-        const isSameSize = previous.size === next.size
-        const hasSameEntries = isSameSize && Array.from(previous).every((id) => next.has(id))
-        return hasSameEntries ? previous : next
-      }
-
-      const next = new Set<string>()
-      for (const id of previous) {
-        if (availableIdSet.has(id) && next.size < CONFIG.START_SYMBOL_COUNT) {
-          next.add(id)
-        }
-      }
-      const isSameSize = previous.size === next.size
-      const hasSameEntries = isSameSize && Array.from(previous).every((id) => next.has(id))
-      return hasSameEntries ? previous : next
-    })
-  }, [availableIdsKey, starterSetLocked])
+  const selected = starterSetLocked
+    ? new Set(availableIds)
+    : sanitizeSelection(selectedState, availableIds)
 
   function effectDescription(symbol: GameSymbol) {
     const { effect } = symbol
@@ -65,8 +57,8 @@ export default function StartSymbolsScreen() {
       return
     }
 
-    setSelected((previous) => {
-      const next = new Set(previous)
+    setSelectedState((previous) => {
+      const next = sanitizeSelection(previous, availableIds)
 
       if (next.has(symbol.id)) {
         next.delete(symbol.id)

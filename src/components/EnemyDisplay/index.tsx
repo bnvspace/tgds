@@ -8,6 +8,7 @@ import styles from './EnemyDisplay.module.css'
 
 interface EnemyDisplayProps {
   enemy: Enemy
+  playerArmor?: number
   combatPhase?: string
   lastSpinResult?: SpinResult | null
 }
@@ -27,6 +28,7 @@ const STATUS_ICON: Record<string, string> = {
 
 export default function EnemyDisplay({
   enemy,
+  playerArmor = 0,
   combatPhase = 'player_idle',
   lastSpinResult = null,
 }: EnemyDisplayProps) {
@@ -107,10 +109,10 @@ export default function EnemyDisplay({
         const primaryType = hits[0].type
         const displayDesc = currentPattern.description || hits.map((h) => localizeAttackDescription(h.description)).join(' + ')
         
-        const effectiveDmg = primaryType === 'physical' && enemy.armor > 0
-          ? Math.max(0, totalDamage - enemy.armor)
+        const effectiveDmg = primaryType === 'physical' && playerArmor > 0
+          ? Math.max(0, totalDamage - playerArmor)
           : totalDamage
-        const armorReduces = primaryType === 'physical' && enemy.armor > 0
+        const armorReduces = primaryType === 'physical' && playerArmor > 0
 
         return (
           <div className={styles.nextAttack} data-attack={primaryType}>
@@ -138,7 +140,7 @@ export default function EnemyDisplay({
               <span className={styles.attackDmg}>-{effectiveDmg}</span>
               {armorReduces && (
                 <span className={styles.attackDmgReduced}>
-                  -{totalDamage} 🛡 {enemy.armor}
+                  -{totalDamage} 🛡 {playerArmor}
                 </span>
               )}
             </div>

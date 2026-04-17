@@ -13,11 +13,18 @@ import { haptics } from '@/utils/haptics'
 import styles from './ShopScreen.module.css'
 
 const TOKEN_CAP = 100
+const HEAL_PRICE = 15
+const SHOP_DISCOUNT_PER_RANK = 0.1
 
 const SYMBOL_COST: Record<string, number> = {
   common: 10,
   rare: 20,
   epic: 35,
+}
+
+function getDiscountedPrice(basePrice: number, discountRanks: number) {
+  const multiplier = Math.max(0.5, 1 - discountRanks * SHOP_DISCOUNT_PER_RANK)
+  return Math.max(1, Math.round(basePrice * multiplier))
 }
 
 /** Deterministic Fisher-Yates shuffle seeded by an integer */
@@ -55,6 +62,9 @@ export default function ShopScreen() {
   const activeSymbolsCount = player?.symbolInventory.length ?? 0
   const reelCount = player?.reels.length ?? 0
   const tokens = player?.tokens ?? 0
+  const shopDiscountRanks = player?.metaModifiers
+    .filter((modifier) => modifier.id === 'shop_discount')
+    .length ?? 0
   const tokenFillPct = Math.min(100, (tokens / TOKEN_CAP) * 100)
   const tokenCapReached = tokens >= TOKEN_CAP
 
@@ -76,7 +86,7 @@ export default function ShopScreen() {
   function buySymbol(symbol: GameSymbol) {
     if (!player) return
 
-    const cost = SYMBOL_COST[symbol.rarity]
+    const cost = getDiscountedPrice(SYMBOL_COST[symbol.rarity], shopDiscountRanks)
     if (player.tokens < cost || boughtIds.has(symbol.id)) return
 
     addSymbolToInventory(symbol)
@@ -92,14 +102,16 @@ export default function ShopScreen() {
   }
 
   function heal() {
-    if (!player || player.tokens < 15 || player.hp >= player.maxHp) return
+    const healCost = getDiscountedPrice(HEAL_PRICE, shopDiscountRanks)
+
+    if (!player || player.tokens < healCost || player.hp >= player.maxHp) return
 
     playButtonSFX()
     haptics.heal()
     setPlayer({
       ...player,
       hp: Math.min(player.maxHp, player.hp + 25),
-      tokens: player.tokens - 15,
+      tokens: player.tokens - healCost,
     })
   }
 
@@ -111,6 +123,7 @@ export default function ShopScreen() {
   const screenStyle = {
     '--shop-backdrop': `url("${shopBackdrop}")`,
   } as CSSProperties
+  const healCost = getDiscountedPrice(HEAL_PRICE, shopDiscountRanks)
 
   return (
     <motion.div
@@ -185,7 +198,7 @@ export default function ShopScreen() {
           <button
             className={`${styles.shopCard} ${styles.healCard}`}
             onClick={heal}
-            disabled={!player || player.tokens < 15 || player.hp >= player.maxHp}
+            disabled={!player || player.tokens < healCost || player.hp >= player.maxHp}
           >
             <div className={styles.shopIconFrame}>
               <GameIcon
@@ -204,11 +217,11 @@ export default function ShopScreen() {
               <span className={styles.shopName}>{t('shop_heal')}</span>
               <span className={styles.shopEffect}>+25 {t('hp_label')}</span>
             </div>
-            <span className={styles.shopCost}>15</span>
+            <span className={styles.shopCost}>{healCost}</span>
           </button>
 
           {shopSymbols.map((symbol) => {
-            const cost = SYMBOL_COST[symbol.rarity]
+            const cost = getDiscountedPrice(SYMBOL_COST[symbol.rarity], shopDiscountRanks)
             const canAfford = tokens >= cost
             const bought = boughtIds.has(symbol.id)
 

@@ -44,7 +44,7 @@ const MODIFIERS: Array<{
     icon: 'REEL',
     descKey: 'mod_reel_desc',
     chipsCost: 60,
-    max: 3,
+    max: 2,
   },
   {
     id: 'token_collector',
@@ -52,6 +52,14 @@ const MODIFIERS: Array<{
     icon: 'COIN',
     descKey: 'mod_token_desc',
     chipsCost: 20,
+    max: 3,
+  },
+  {
+    id: 'shop_discount',
+    nameKey: 'mod_discount_name',
+    icon: 'SALE',
+    descKey: 'mod_discount_desc',
+    chipsCost: 25,
     max: 3,
   },
   {
@@ -66,7 +74,6 @@ const MODIFIERS: Array<{
 
 export default function MetaMenu() {
   const meta = useGameStore((s) => s.meta)
-  const startRun = useGameStore((s) => s.startRun)
   const setPhase = useGameStore((s) => s.setPhase)
   const store = useGameStore()
   const { t, lang } = useTranslation()

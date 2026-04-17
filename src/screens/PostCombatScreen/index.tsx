@@ -7,7 +7,7 @@ import { useGameStore } from '@/store/gameStore'
 import type { CombatRewardOption, GameSymbol } from '@/types'
 import { playButtonSFX } from '@/utils/audio'
 import { haptics } from '@/utils/haptics'
-import { triggerRewardBurst } from '@/components/RewardBurstLayer'
+import { triggerRewardBurst } from '@/components/RewardBurstLayer/events'
 import styles from './PostCombatScreen.module.css'
 
 export default function PostCombatScreen() {

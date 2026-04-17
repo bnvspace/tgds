@@ -1,73 +1,74 @@
-# React + TypeScript + Vite
+# Gift's & Daggers
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Telegram Mini App action-roguelite with a manual-stop slot combat loop inspired by Slots & Daggers.
 
-Currently, two official plugins are available:
+## Current State
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Manual stop combat flow with left-to-right reel stops
+- Shared symbol inventory, shop/removal flow, match-3 resolution, enemy intents
+- Timed stop skill checks, armor/magic/poison/stun combat math
+- Meta modifiers with 3-5 reels, shop discount, revive, damage reduction, chip respec
+- Atmosphere layer: haptics, audio, reward bursts, screen shake, safe-area handling
+- Endless arena mode and leaderboard API backed by Vercel Blob
+- Optional frontend runtime monitoring through Sentry
+- Lazy-loaded screens and split vendor chunks for a lighter initial app bundle
 
-## React Compiler
+## Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19
+- TypeScript 5.9
+- Vite 8
+- Zustand
+- Framer Motion
+- Telegram Mini App APIs
+- Vercel Functions + Blob for leaderboard storage
 
-## Expanding the ESLint configuration
+## Local Commands
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
+npm run test
+npm run lint
+npm run build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Environment
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Leaderboard writes require:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+BLOB_READ_WRITE_TOKEN=...
+VITE_SENTRY_DSN=...
+VITE_APP_VERSION=...
 ```
+
+Without `BLOB_READ_WRITE_TOKEN`, `/api/leaderboard` returns a server error and the game falls back gracefully on the client.
+Without `VITE_SENTRY_DSN`, monitoring stays disabled.
+
+## Project Layout
+
+```text
+src/
+  components/   UI building blocks
+  screens/      Flow screens: start, map, combat, shop, meta, leaderboard
+  game/         Pure game logic: symbols, enemies, resolution, map generation
+  store/        Zustand game state
+  i18n/         RU / EN localization
+  utils/        audio, haptics, leaderboard helpers
+api/
+  leaderboard.ts
+docs/
+  mechanics.md
+  tasklist.md
+  workflow.md
+```
+
+## Still Open
+
+- Broader automated coverage for store flows, combat orchestration, and regression cases
+- Optional server-side monitoring for API routes
+- Real-device Telegram QA for one-hand combat UX
+- Final asset pass for temporary icons like Axe and Sawblade
+- Production deployment checklist for leaderboard env/config

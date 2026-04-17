@@ -3,26 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { symbolIconById } from '@/assets/pixelArt'
 import { playCoinSFX } from '@/utils/audio'
 import GameIcon from '@/components/GameIcon'
+import { REWARD_BURST_EVENT, type RewardBurstEventDetail } from './events'
 import styles from './RewardBurstLayer.module.css'
-
-export type RewardType = 'coin' | 'chip'
-
-export interface RewardBurstEventDetail {
-  type: RewardType
-  amount: number
-}
-
-export const triggerRewardBurst = (type: RewardType, amount: number) => {
-  window.dispatchEvent(
-    new CustomEvent<RewardBurstEventDetail>('rewardBurst', {
-      detail: { type, amount },
-    })
-  )
-}
 
 interface Particle {
   id: string
-  type: RewardType
+  type: RewardBurstEventDetail['type']
   x: number
   y: number
   vx: number
@@ -67,8 +53,8 @@ export default function RewardBurstLayer() {
       }, 2500)
     }
 
-    window.addEventListener('rewardBurst', handleBurst)
-    return () => window.removeEventListener('rewardBurst', handleBurst)
+    window.addEventListener(REWARD_BURST_EVENT, handleBurst)
+    return () => window.removeEventListener(REWARD_BURST_EVENT, handleBurst)
   }, [])
 
   return (

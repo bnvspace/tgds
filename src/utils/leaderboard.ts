@@ -1,4 +1,5 @@
 // ── API utility for leaderboard ────────────────────────────────────────────
+import { captureError } from '@/utils/monitoring'
 
 export interface LeaderboardEntry {
   userId: string
@@ -39,9 +40,16 @@ const API_BASE = typeof window !== 'undefined'
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
     const r = await fetch(`${API_BASE}/api/leaderboard`, { cache: 'no-store' })
-    if (!r.ok) return []
+    if (!r.ok) {
+      captureError(new Error(`Leaderboard fetch failed with status ${r.status}`), {
+        scope: 'leaderboard.fetch',
+        extra: { status: r.status },
+      })
+      return []
+    }
     return r.json()
-  } catch {
+  } catch (error) {
+    captureError(error, { scope: 'leaderboard.fetch' })
     return []
   }
 }
@@ -56,7 +64,7 @@ export async function registerUser(
       ? `@${tgUser.username}`
       : tgUser.first_name
 
-    await fetch(`${API_BASE}/api/leaderboard`, {
+    const response = await fetch(`${API_BASE}/api/leaderboard`, {
       method: 'POST',
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
@@ -67,7 +75,25 @@ export async function registerUser(
         completedAt: completedAt ?? null,
       }),
     })
-  } catch {
+
+    if (!response.ok) {
+      captureError(new Error(`Leaderboard update failed with status ${response.status}`), {
+        scope: 'leaderboard.register',
+        extra: {
+          status: response.status,
+          userId: tgUser.id,
+          score,
+        },
+      })
+    }
+  } catch (error) {
+    captureError(error, {
+      scope: 'leaderboard.register',
+      extra: {
+        userId: tgUser.id,
+        score,
+      },
+    })
     // Silently fail — leaderboard is not critical
   }
 }

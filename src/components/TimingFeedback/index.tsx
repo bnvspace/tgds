@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import type { TimingTier } from '@/types'
 import { TIMING } from '@/constants'
 import { useTranslation } from '@/i18n'
@@ -10,21 +9,9 @@ interface TimingFeedbackProps {
 }
 
 export default function TimingFeedback({ tier, sessionKey }: TimingFeedbackProps) {
-  const [visible, setVisible] = useState(false)
   const { t } = useTranslation()
 
-  useEffect(() => {
-    if (!tier || tier === 'ok') {
-      setVisible(false)
-      return
-    }
-
-    setVisible(true)
-    const timeout = setTimeout(() => setVisible(false), TIMING.FEEDBACK_DISPLAY_MS)
-    return () => clearTimeout(timeout)
-  }, [tier, sessionKey])
-
-  if (!visible || !tier || tier === 'ok') {
+  if (!tier || tier === 'ok') {
     return null
   }
 
@@ -38,6 +25,7 @@ export default function TimingFeedback({ tier, sessionKey }: TimingFeedbackProps
         key={sessionKey}
         className={styles.label}
         data-tier={tier}
+        style={{ animationDuration: `${TIMING.FEEDBACK_DISPLAY_MS}ms` }}
       >
         {label}
       </span>

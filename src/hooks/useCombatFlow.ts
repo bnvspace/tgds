@@ -15,7 +15,7 @@ import {
   playCheerSFX,
 } from '@/utils/audio'
 import { haptics } from '@/utils/haptics'
-import { triggerRewardBurst } from '@/components/RewardBurstLayer'
+import { triggerRewardBurst } from '@/components/RewardBurstLayer/events'
 import type { SlotMachineHandle } from '@/components/SlotMachine'
 
 export type CombatUiPhase =
@@ -255,7 +255,7 @@ export function useCombatFlow() {
       log(`🔄 ${t('reroll_applied')} [${rerollsApplied.map((i) => i + 1).join(', ')}]`)
     }
 
-    const result = resolveSymbols(modSymbols, modTimings, player, enemy, rerollsApplied)
+    const result = resolveSymbols(modSymbols, modTimings, player, rerollsApplied)
 
     applySpinResult(result)
     // Pass physical/magic separately so store can apply enemy armor
@@ -304,9 +304,9 @@ export function useCombatFlow() {
       window.dispatchEvent(new CustomEvent('screenShake', { detail: { type: 'soft' } }))
     }
 
-    const liveEnemy = useGameStore.getState().currentEnemy
-    const armorTag = liveEnemy && liveEnemy.armor > 0 && result.totalPhysicalDamage > 0
-      ? `(${t('armor_short')} ${liveEnemy.armor})`
+    const resolvedEnemy = useGameStore.getState().currentEnemy
+    const armorTag = enemy.armor > 0 && result.totalPhysicalDamage > 0
+      ? `(${t('armor_short')} ${enemy.armor})`
       : null
 
     const logLine = [
@@ -333,7 +333,7 @@ export function useCombatFlow() {
       log(logLine)
     }
 
-    if (enemy.hp - result.totalDamage <= 0) {
+    if (resolvedEnemy && resolvedEnemy.hp <= 0) {
       const finalCombatLog = log(t('enemy_defeated'))
       haptics.victory()
       playCheerSFX()

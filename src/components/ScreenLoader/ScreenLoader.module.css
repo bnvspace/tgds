@@ -1,0 +1,16 @@
+.screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(10, 10, 16, 0.9), rgba(18, 18, 30, 0.96));
+}
+
+.label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.08em;
+}
